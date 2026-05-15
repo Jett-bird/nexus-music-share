@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #1a3a5c;
@@ -295,21 +296,11 @@
             background: rgba(255,255,255,0.08); backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.15); border-radius: 18px;
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-            font-size: 1.6rem; color: white; animation: float 5s ease-in-out infinite;
-            top: 50%; left: 50%;
+            font-size: 1.6rem; color: white;
         }
         .connect-node span { font-size: 0.55rem; opacity: 0.7; font-weight: 500; }
         .connect-node.lender { border-color: rgba(200,149,108,0.4); }
         .connect-node.borrower { border-color: rgba(76,175,125,0.4); }
-        
-        /* 圆形排列 - 每个节点间隔60度 */
-        .connect-node:nth-child(3) { transform: translate(-50%, calc(-50% - 130px)); animation-delay: 0s; } /* 顶部 */
-        .connect-node:nth-child(4) { transform: translate(calc(-50% + 113px), calc(-50% - 65px)); animation-delay: 1s; } /* 右上 */
-        .connect-node:nth-child(5) { transform: translate(calc(-50% + 113px), calc(-50% + 65px)); animation-delay: 2s; } /* 右下 */
-        .connect-node:nth-child(6) { transform: translate(-50%, calc(-50% + 130px)); animation-delay: 3s; } /* 底部 */
-        .connect-node:nth-child(7) { transform: translate(calc(-50% - 113px), calc(-50% + 65px)); animation-delay: 4s; } /* 左下 */
-        .connect-node:nth-child(8) { transform: translate(calc(-50% - 113px), calc(-50% - 65px)); animation-delay: 5s; } /* 左上 */
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
         /* Sections */
         .section { padding: 80px 0; }
@@ -1041,9 +1032,65 @@
 <div class="toast" id="toast"></div>
 
 <script>
-    // ===== State (localStorage persistent) =====
+    // ===== Supabase Cloud Database (Cross-device login) =====
+    // Supabase Cloud Database
+    const SUPABASE_URL = 'https://kbhbpqtggujotmejmzkt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiaGJwcXRnZ3Vqb3RtZWptemt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MzYyOTEsImV4cCI6MjA5NDQxMjI5MX0.isLCs717T7Ly18wbxruaDdSEdCM_1tJUW2TRmXvRXkM';
+    let supabase = null;
+    
+    async function initSupabase() {
+        if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+            console.log('Supabase not configured. Using localStorage only.');
+            return false;
+        }
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            // Test connection
+            const { data, error } = await supabase.from('users').select('count').limit(1);
+            if (error) throw error;
+            console.log('Supabase connected!');
+            return true;
+        } catch (e) {
+            console.log('Supabase connection failed:', e);
+            return false;
+        }
+    }
+    
+    // Sync users to cloud
+    async function syncUsersToCloud(users) {
+        if (!supabase) return;
+        for (const user of users) {
+            try {
+                await supabase.from('users').upsert([{
+                    email: user.email,
+                    name: user.name,
+                    password: user.password,
+                    role: user.role,
+                    updated_at: new Date().toISOString()
+                }], { onConflict: 'email' });
+            } catch (e) {
+                console.log('Sync error:', e);
+            }
+        }
+    }
+    
+    // Fetch users from cloud
+    async function fetchUsersFromCloud() {
+        if (!supabase) return [];
+        try {
+            const { data, error } = await supabase.from('users').select('*');
+            if (error) throw error;
+            return data || [];
+        } catch (e) {
+            console.log('Fetch error:', e);
+            return [];
+        }
+    }
+    
+    // ===== State =====
     let currentUser = null;
     let selectedRole = 'borrower';
+    let supabaseEnabled = false;
 
     // Persistent user store - survives page refresh
     function getUsers() {
@@ -1065,13 +1112,63 @@
     }
 
     // Auto-login on page load if session exists
-    (function checkSession() {
+    (async function checkSession() {
+        // Initialize Supabase
+        supabaseEnabled = await initSupabase();
+        
+        // Sync cloud users with local
+        if (supabaseEnabled) {
+            const cloudUsers = await fetchUsersFromCloud();
+            if (cloudUsers.length > 0) {
+                const localUsers = getUsers();
+                // Merge cloud users into local (cloud is source of truth)
+                cloudUsers.forEach(cu => {
+                    const exists = localUsers.find(u => u.email === cu.email);
+                    if (!exists) localUsers.push(cu);
+                });
+                saveUsers(localUsers);
+            }
+        }
+        
         const session = getSession();
         if (session) {
             currentUser = session;
             enterApp();
         }
     })();
+    
+    // ===== Circular Layout for Hero Icons =====
+    function positionNodesInCircle() {
+        const container = document.querySelector('.connect-illustration');
+        if (!container) return;
+        const nodes = container.querySelectorAll('.connect-node');
+        const centerX = 200;
+        const centerY = 200;
+        const radius = 130;
+        
+        nodes.forEach((node, i) => {
+            const angle = (i * 60 - 90) * (Math.PI / 180); // Start from top, 60° apart
+            const x = centerX + radius * Math.cos(angle) - 40; // -40 = half node width
+            const y = centerY + radius * Math.sin(angle) - 40; // -40 = half node height
+            
+            node.style.left = x + 'px';
+            node.style.top = y + 'px';
+            node.style.transform = 'none';
+            
+            // Add floating animation with unique delay
+            node.style.animation = `float 5s ease-in-out ${i * 0.5}s infinite`;
+        });
+    }
+    
+    // Add float animation
+    const style = document.createElement('style');
+    style.textContent = `@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }`;
+    document.head.appendChild(style);
+    
+    // Position nodes when DOM is ready
+    document.addEventListener('DOMContentLoaded', positionNodesInCircle);
+    // Also run after a short delay to ensure elements exist
+    setTimeout(positionNodesInCircle, 100);
 
     // ===== Auth Functions =====
     function showLogin() {
@@ -1160,10 +1257,22 @@
         }, 500);
     }
 
-    function handleLogin() {
+    async function handleLogin() {
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
         if (!email || !password) { showToast('Please fill in all fields'); return; }
+        
+        // Refresh cloud users before login
+        if (supabaseEnabled) {
+            const cloudUsers = await fetchUsersFromCloud();
+            const localUsers = getUsers();
+            cloudUsers.forEach(cu => {
+                const exists = localUsers.find(u => u.email === cu.email);
+                if (!exists) localUsers.push(cu);
+            });
+            saveUsers(localUsers);
+        }
+        
         const users = getUsers();
         const user = users.find(u => u.email === email && u.password === password);
         if (!user) {
@@ -1181,7 +1290,7 @@
         enterApp();
     }
 
-    function handleRegister() {
+    async function handleRegister() {
         const firstName = document.getElementById('regFirstName').value.trim();
         const lastName = document.getElementById('regLastName').value.trim();
         const email = document.getElementById('regEmail').value.trim();
@@ -1195,8 +1304,15 @@
             return;
         }
         const name = firstName + ' ' + lastName;
-        users.push({ name, email, password, role: selectedRole });
+        const newUser = { name, email, password, role: selectedRole };
+        users.push(newUser);
         saveUsers(users);
+        
+        // Sync to cloud
+        if (supabaseEnabled) {
+            await syncUsersToCloud([newUser]);
+        }
+        
         currentUser = { name, email, role: selectedRole };
         saveSession(currentUser);
         showToast('Account created! Welcome to MusicShare 🎵');
