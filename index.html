@@ -277,7 +277,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.21</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.22</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar">A</div>
@@ -1062,8 +1062,26 @@ const style = document.createElement('style');
 style.textContent = '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
 document.head.appendChild(style);
 
+/* ── realtime ── */
+function startRealtime() {
+  sb.channel('requests-changes')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests' }, payload => {
+      const r = payload.new;
+      // if I'm the borrower and request just got accepted → refresh My Rent
+      if (r.borrower_id === currentUser.id && r.status === 'accepted') {
+        const activeTab = document.querySelector('.tab.active')?.id;
+        if (activeTab === 'tab-btn-myrent') renderMyRent();
+        else showToast('toast-home', `✅ Your request for "${r.instrument_name}" was accepted!`);
+      }
+      // if I'm on chat tab → refresh
+      const activeTab = document.querySelector('.tab.active')?.id;
+      if (activeTab === 'tab-btn-chat') renderChat();
+    })
+    .subscribe();
+}
+
 /* ── start ── */
-init().then(() => loadMemberCount());
+init().then(() => { loadMemberCount(); startRealtime(); });
 </script>
 </body>
 </html>
