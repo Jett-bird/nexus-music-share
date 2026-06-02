@@ -56,6 +56,8 @@ textarea.form-input{resize:vertical;min-height:80px}
 .btn-primary:disabled{background:var(--g100);cursor:not-allowed}
 .btn-secondary{width:100%;background:transparent;color:var(--t600);border:1px solid var(--t400);border-radius:10px;padding:12px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;margin-top:8px;transition:all 0.15s}
 .btn-secondary:hover{background:var(--t50)}
+.btn-google{width:100%;background:#fff;color:#3c4043;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;margin-top:8px;transition:background 0.15s;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-google:hover{background:#f8f8f8}
 .auth-switch{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
 .auth-switch a{color:var(--t600);cursor:pointer;font-weight:500}
 .divider{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--hint);font-size:12px}
@@ -179,14 +181,19 @@ textarea.form-input{resize:vertical;min-height:80px}
       <div class="auth-sub">Sign in with your school email</div>
       <div class="form-group">
         <label class="form-label">Student Email</label>
-        <input class="form-input" type="email" placeholder="yourname@nexus.edu.sg" id="login-email" />
+        <input class="form-input" type="email" placeholder="yourname@nexus.edu.sg" id="login-email" autocomplete="off" />
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>
-        <input class="form-input" type="password" placeholder="••••••••" id="login-pw" />
+        <input class="form-input" type="password" placeholder="••••••••" id="login-pw" autocomplete="new-password" />
       </div>
       <button class="btn-primary" id="login-btn" onclick="doLogin()">
         Sign In <i class="ti ti-arrow-right"></i>
+      </button>
+      <div class="divider">or</div>
+      <button class="btn-google" onclick="doGoogleLogin()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
       </button>
       <div class="divider">or</div>
       <button class="btn-secondary" onclick="showScreen('screen-register')">Create an Account</button>
@@ -206,9 +213,15 @@ textarea.form-input{resize:vertical;min-height:80px}
   </div>
   <div class="auth-wrap" style="padding-top:1.25rem">
     <div class="auth-card">
-      <div class="form-group">
-        <label class="form-label">Full Name</label>
-        <input class="form-input" type="text" placeholder="Your full name" id="reg-name" />
+      <div style="display:flex;gap:10px">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">First Name</label>
+          <input class="form-input" type="text" placeholder="First name" id="reg-firstname" />
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Last Name</label>
+          <input class="form-input" type="text" placeholder="Last name" id="reg-lastname" />
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Student Email</label>
@@ -383,7 +396,14 @@ textarea.form-input{resize:vertical;min-height:80px}
 // ── Supabase init ──
 const SUPABASE_URL = 'https://kbhbpqtggujotmejmzkt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiaGJwcXRnZ3Vqb3RtZWptemt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MzYyOTEsImV4cCI6MjA5NDQxMjI5MX0.isLCs717T7Ly18wbxruaDdSEdCM_1tJUW2TRmXvRXkM';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage: window.localStorage
+  }
+});
 
 const EMOJIS = { Strings:'🎸', Keyboard:'🎹', Wind:'🪈', Percussion:'🥁', Other:'🎵' };
 const BG = ['bg-t','bg-a','bg-c','bg-g'];
@@ -424,6 +444,14 @@ function showScreen(id) {
 }
 
 /* ── auth ── */
+async function doGoogleLogin() {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: 'https://jett-bird.github.io/nexus-music-share/' }
+  });
+  if (error) showToast('toast-login', error.message, true);
+}
+
 async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pw    = document.getElementById('login-pw').value;
@@ -438,12 +466,14 @@ async function doLogin() {
 }
 
 async function doRegister() {
-  const name  = document.getElementById('reg-name').value.trim();
+  const firstName = document.getElementById('reg-firstname').value.trim();
+  const lastName  = document.getElementById('reg-lastname').value.trim();
+  const name = `${firstName} ${lastName}`.trim();
   const email = document.getElementById('reg-email').value.trim();
   const grade = document.getElementById('reg-grade').value;
   const pw    = document.getElementById('reg-pw').value;
   const pw2   = document.getElementById('reg-pw2').value;
-  if (!name || !email || !grade || !pw) { showToast('toast-reg', 'Please fill in all fields', true); return; }
+  if (!firstName || !lastName || !email || !grade || !pw) { showToast('toast-reg', 'Please fill in all fields', true); return; }
   if (pw.length < 8) { showToast('toast-reg', 'Password must be at least 8 characters', true); return; }
   if (pw !== pw2) { showToast('toast-reg', 'Passwords do not match', true); return; }
   setLoading('reg-btn', true);
@@ -462,6 +492,11 @@ async function doLogout() {
   await sb.auth.signOut();
   currentUser = null; currentProfile = null;
   allListings = [];
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-pw').value = '';
+  const btn = document.getElementById('login-btn');
+  btn.disabled = false;
+  btn.innerHTML = 'Sign In <i class="ti ti-arrow-right"></i>';
   showScreen('screen-login');
 }
 
