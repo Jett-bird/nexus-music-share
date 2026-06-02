@@ -105,6 +105,10 @@ textarea.form-input{resize:vertical;min-height:80px}
 .badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:500}
 .badge-ok{background:var(--t50);color:var(--t800)}
 .badge-out{background:var(--a50);color:var(--a400)}
+.badge-na{background:var(--g50);color:var(--g600)}
+.av-option{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;margin-bottom:8px;text-align:left;transition:all 0.15s;display:flex;align-items:center;gap:10px}
+.av-option:hover{border-color:var(--t400)}
+.av-active{border-color:var(--t400);background:var(--t50);color:var(--t800)}
 .empty-state{text-align:center;padding:3rem 1rem;color:var(--hint);font-size:13px}
 .empty-state i{font-size:36px;display:block;margin-bottom:10px;color:var(--g100)}
 .fab{padding:1rem 1.25rem 1.5rem}
@@ -258,7 +262,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.18</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar">A</div>
@@ -387,6 +391,29 @@ textarea.form-input{resize:vertical;min-height:80px}
     </div>
     <button class="btn-primary" style="margin-top:12px" onclick="confirmRent()">
       Confirm Booking <i class="ti ti-check"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════ AVAILABILITY MODAL ═══════ -->
+<div class="overlay" id="ov-availability">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="av-title">Update Availability</div>
+      <button class="close-x" onclick="closeOverlay('ov-availability')">&times;</button>
+    </div>
+    <div class="modal-sub">Select the current status of your instrument</div>
+    <button class="av-option" data-val="available">
+      <span style="width:10px;height:10px;border-radius:50%;background:var(--t400);display:inline-block"></span>
+      Available — ready to lend
+    </button>
+    <button class="av-option" data-val="on_loan">
+      <span style="width:10px;height:10px;border-radius:50%;background:var(--a400);display:inline-block"></span>
+      On Loan — currently borrowed
+    </button>
+    <button class="av-option" data-val="unavailable">
+      <span style="width:10px;height:10px;border-radius:50%;background:var(--g100);display:inline-block"></span>
+      Unavailable — not for lending
     </button>
   </div>
 </div>
@@ -587,6 +614,19 @@ function setFilter(el, cat) {
   renderBrowse();
 }
 
+function statusLabel(item) {
+  const s = item.status || (item.available ? 'available' : 'on_loan');
+  if (s === 'available') return 'Available';
+  if (s === 'on_loan') return 'On Loan';
+  return 'Unavailable';
+}
+function statusBadgeClass(item) {
+  const s = item.status || (item.available ? 'available' : 'on_loan');
+  if (s === 'available') return 'badge-ok';
+  if (s === 'on_loan') return 'badge-out';
+  return 'badge-na';
+}
+
 function renderBrowse() {
   const q = document.getElementById('search-inp').value.trim().toLowerCase();
   const data = allListings.filter(i => {
@@ -607,7 +647,7 @@ function renderBrowse() {
         <div class="icard-owner"><i class="ti ti-user" style="font-size:11px"></i> ${item.owner_name}</div>
         <div class="icard-foot">
           <div class="price">$${item.price}<span>/wk</span></div>
-          <div class="badge ${item.available ? 'badge-ok' : 'badge-out'}">${item.available ? 'Available' : 'On Loan'}</div>
+          <div class="badge ${statusBadgeClass(item)}">${statusLabel(item)}</div>
         </div>
       </div>
     </div>`).join('');
@@ -628,7 +668,7 @@ function renderMyListings() {
         <div class="listing-name">${item.name}</div>
         <div class="listing-meta">$${item.price}/wk · ${item.cat} · ${item.contact}</div>
       </div>
-      <button class="badge ${item.available ? 'badge-ok' : 'badge-out'}" onclick="toggleAvailability('${item.id}')" style="border:none;cursor:pointer" title="Toggle availability">${item.available ? 'Available' : 'On Loan'}</button>
+      <button class="badge ${statusBadgeClass(item)}" onclick="openAvailabilityModal('${item.id}')" style="border:none;cursor:pointer" title="Change availability">${statusLabel(item)}</button>
       <button class="listing-del" onclick="deleteListing('${item.id}')" title="Remove listing">
         <i class="ti ti-trash"></i>
       </button>
@@ -647,16 +687,30 @@ async function deleteListing(id) {
 }
 
 /* ── rent modal ── */
-async function toggleAvailability(id) {
+async function setAvailability(id, status) {
   const item = allListings.find(l => l.id === id);
   if (!item) return;
-  const newVal = !item.available;
-  const { error } = await sb.from('listings').update({ available: newVal }).eq('id', id);
+  const available = status === 'available';
+  const { error } = await sb.from('listings').update({ status, available }).eq('id', id);
   if (error) { showToast('toast-home', 'Could not update availability', true); return; }
-  item.available = newVal;
+  item.status = status;
+  item.available = available;
   renderBrowse();
+  renderMyListings();
   updateStats();
-  showToast('toast-home', `Marked as ${newVal ? 'Available' : 'On Loan'}`);
+  closeOverlay('ov-availability');
+}
+
+function openAvailabilityModal(id) {
+  const item = allListings.find(l => l.id === id);
+  if (!item) return;
+  document.getElementById('av-title').textContent = item.name;
+  const current = item.status || (item.available ? 'available' : 'on_loan');
+  document.querySelectorAll('.av-option').forEach(btn => {
+    btn.classList.toggle('av-active', btn.dataset.val === current);
+    btn.onclick = () => setAvailability(id, btn.dataset.val);
+  });
+  openOverlay('ov-availability');
 }
 
 function openRentModal(id) {
