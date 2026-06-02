@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nexus Music Share</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --t50:#E1F5EE;--t100:#9FE1CB;--t200:#5DCAA5;--t400:#1D9E75;--t600:#0F6E56;--t800:#085041;
+  --a50:#FAEEDA;--a200:#EF9F27;--a400:#BA7517;
+  --c50:#FAECE7;--c400:#D85A30;--c600:#993C1D;
+  --g50:#F1EFE8;--g100:#D3D1C7;--g600:#5F5E5A;--g800:#444441;
+  --bg:#f5f4f0;--surface:#fff;--border:#e0e0e0;
+  --text:#1a1a1a;--muted:#666;--hint:#aaa;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:680px;margin:0 auto;min-height:100vh;background:var(--bg)}
+
+/* ── nav ── */
+.nav{background:var(--t800);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:10}
+.nav-logo{font-family:'Playfair Display',serif;font-size:18px;color:#fff;font-weight:700}
+.nav-logo span{color:var(--t200)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-user{display:flex;align-items:center;gap:8px;color:#fff;font-size:13px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--t400);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#fff;flex-shrink:0}
+.nav-btn{background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:20px;padding:5px 14px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;transition:background 0.15s}
+.nav-btn:hover{background:rgba(255,255,255,0.25)}
+
+/* ── screens ── */
+.screen{display:none}
+.screen.active{display:block}
+
+
+/* ── auth ── */
+.auth-hero{background:var(--t800);padding:3rem 1.25rem 2rem;text-align:center}
+.auth-logo{font-family:'Playfair Display',serif;font-size:36px;font-weight:700;color:#fff}
+.auth-logo span{color:var(--t200)}
+.auth-tagline{font-size:12px;color:rgba(255,255,255,0.55);margin-top:6px;letter-spacing:1.5px;text-transform:uppercase}
+.auth-wrap{padding:1.5rem 1.25rem 2rem}
+.auth-card{background:var(--surface);border:0.5px solid var(--border);border-radius:16px;padding:2rem}
+.auth-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--text);margin-bottom:4px}
+.auth-sub{font-size:13px;color:var(--muted);margin-bottom:1.5rem}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.6px}
+.form-input{width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);transition:border-color 0.15s;outline:none}
+.form-input:focus{border-color:var(--t400)}
+textarea.form-input{resize:vertical;min-height:80px}
+.btn-primary{width:100%;background:var(--t600);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;margin-top:8px;transition:background 0.15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-primary:hover{background:var(--t800)}
+.btn-primary:disabled{background:var(--g100);cursor:not-allowed}
+.btn-secondary{width:100%;background:transparent;color:var(--t600);border:1px solid var(--t400);border-radius:10px;padding:12px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;margin-top:8px;transition:all 0.15s}
+.btn-secondary:hover{background:var(--t50)}
+.auth-switch{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
+.auth-switch a{color:var(--t600);cursor:pointer;font-weight:500}
+.divider{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--hint);font-size:12px}
+.divider::before,.divider::after{content:'';flex:1;height:0.5px;background:var(--border)}
+
+/* ── home hero ── */
+.home-hero{background:var(--t800);padding:1.5rem 1.25rem 1.25rem;position:relative;overflow:hidden}
+.home-hero::after{content:'♩ ♫ ♬';position:absolute;top:12px;right:16px;font-size:18px;color:rgba(255,255,255,0.12);letter-spacing:8px}
+.school-tag{display:inline-block;background:rgba(255,255,255,0.18);color:rgba(255,255,255,0.88);font-size:10px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-bottom:10px}
+.hero-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:6px}
+.hero-sub{color:rgba(255,255,255,0.65);font-size:13px;line-height:1.5;max-width:320px}
+.hero-stats{display:flex;gap:24px;margin-top:16px}
+.hs-num{font-size:20px;font-weight:700;color:#fff;font-family:'Playfair Display',serif}
+.hs-lbl{font-size:10px;color:rgba(255,255,255,0.55);margin-top:1px}
+
+/* ── tabs ── */
+.tabs{display:flex;background:var(--surface);border-bottom:0.5px solid var(--border);position:sticky;top:52px;z-index:9}
+.tab{flex:1;padding:13px 0;text-align:center;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.15s}
+.tab.active{color:var(--t600);border-bottom-color:var(--t600)}
+
+/* ── browse ── */
+.search-row{display:flex;gap:8px;padding:1rem 1.25rem 0}
+.search-row input{flex:1;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);outline:none;transition:border-color 0.15s}
+.search-row input:focus{border-color:var(--t400)}
+.search-btn{background:var(--t600);color:#fff;border:none;border-radius:8px;padding:9px 16px;cursor:pointer;font-size:15px;transition:background 0.15s}
+.search-btn:hover{background:var(--t800)}
+.pills{display:flex;gap:6px;padding:10px 1.25rem 0;overflow-x:auto;scrollbar-width:none}
+.pills::-webkit-scrollbar{display:none}
+.pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;white-space:nowrap;cursor:pointer;color:var(--muted);transition:all 0.15s;user-select:none}
+.pill:hover{border-color:var(--t400);color:var(--t600)}
+.pill.active{background:var(--t400);border-color:var(--t400);color:#fff}
+.cards-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px 1.25rem 0}
+.icard{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform 0.12s,border-color 0.12s}
+.icard:hover{transform:translateY(-2px);border-color:var(--t200)}
+.icard-img{height:88px;display:flex;align-items:center;justify-content:center;font-size:42px}
+.bg-t{background:var(--t50)}.bg-a{background:var(--a50)}.bg-c{background:var(--c50)}.bg-g{background:var(--g50)}
+.icard-body{padding:10px 12px 12px}
+.icard-name{font-weight:500;font-size:13px;color:var(--text);margin-bottom:3px}
+.icard-owner{font-size:11px;color:var(--muted);margin-bottom:7px;display:flex;align-items:center;gap:4px}
+.icard-foot{display:flex;justify-content:space-between;align-items:center}
+.price{font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--t600)}
+.price span{font-size:10px;font-weight:400;font-family:'DM Sans',sans-serif;color:var(--hint)}
+.badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:500}
+.badge-ok{background:var(--t50);color:var(--t800)}
+.badge-out{background:var(--a50);color:var(--a400)}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--hint);font-size:13px}
+.empty-state i{font-size:36px;display:block;margin-bottom:10px;color:var(--g100)}
+.fab{padding:1rem 1.25rem 1.5rem}
+.fab-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--t600);color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:background 0.15s}
+.fab-btn:hover{background:var(--t800)}
+
+/* ── my listings ── */
+.my-listings{padding:0 1.25rem 1rem}
+.sec-header{padding:1rem 1.25rem 10px;font-size:14px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:6px}
+.sec-header i{color:var(--t400);font-size:16px}
+.listing-row{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:border-color 0.12s}
+.listing-row:hover{border-color:var(--t200)}
+.listing-icon{width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--t50);flex-shrink:0}
+.listing-info{flex:1;min-width:0}
+.listing-name{font-weight:500;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.listing-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.listing-del{background:none;border:none;cursor:pointer;color:var(--hint);font-size:18px;padding:4px;transition:color 0.12s;flex-shrink:0}
+.listing-del:hover{color:var(--c400)}
+
+/* ── overlays ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:16px;width:100%;max-width:420px;padding:1.5rem;margin:auto}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.modal-title{font-family:'Playfair Display',serif;font-size:21px;font-weight:700;color:var(--text)}
+.close-x{background:none;border:none;cursor:pointer;font-size:22px;color:var(--hint);line-height:1;padding:2px}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:14px}
+
+/* ── calendar ── */
+.cal-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--g50);border-bottom:0.5px solid var(--border)}
+.cal-nav-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;padding:2px 8px;border-radius:6px;line-height:1;transition:background 0.12s}
+.cal-nav-btn:hover{background:var(--border)}
+.cal-month-lbl{font-size:14px;font-weight:500;color:var(--text)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);background:var(--surface)}
+.cal-dow{text-align:center;font-size:10px;color:var(--hint);font-weight:500;padding:8px 0;border-bottom:0.5px solid var(--border)}
+.cal-day{text-align:center;padding:9px 0;font-size:12px;cursor:pointer;color:var(--text);transition:background 0.1s;user-select:none;border:0.5px solid transparent}
+.cal-day:hover:not(.past):not(.empty){background:var(--t50)}
+.cal-day.empty{cursor:default}
+.cal-day.past{color:var(--hint);cursor:not-allowed}
+.cal-day.today{font-weight:700;color:var(--t600)}
+.cal-day.sel-start,.cal-day.sel-end{background:var(--t400);color:#fff;border-radius:4px;font-weight:500}
+.cal-day.sel-range{background:var(--t50);color:var(--t800)}
+.date-row{display:flex;gap:8px;margin-bottom:8px}
+.date-box{flex:1;background:var(--g50);border-radius:8px;padding:8px 12px}
+.date-box-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px}
+.date-box-val{font-size:13px;font-weight:500;color:var(--text)}
+.fee-box{background:var(--t50);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.fee-lbl{font-size:13px;color:var(--t800)}
+.fee-val{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:var(--t600)}
+
+/* ── toast ── */
+.toast-bar{min-height:48px;display:flex;align-items:center;justify-content:center;padding:0 1rem 12px;pointer-events:none}
+.toast{background:var(--t600);color:#fff;border-radius:20px;padding:9px 22px;font-size:13px;opacity:0;transition:opacity 0.3s;display:inline-block;text-align:center;max-width:90%}
+.toast.show{opacity:1}
+.toast.error{background:var(--c600)}
+
+/* ── back header ── */
+.back-header{background:var(--t800);padding:0 1.25rem;display:flex;align-items:center;gap:12px;height:52px}
+.back-btn{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.8);font-size:20px;padding:4px;line-height:1;display:flex;align-items:center}
+.back-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══════ LOGIN ═══════ -->
+<div id="screen-login" class="screen active">
+  <div class="auth-hero">
+    <div class="auth-logo">Nexus Music <span>Share</span></div>
+    <div class="auth-tagline">Instrument Lending Platform for Nexus International School</div>
+  </div>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-title">Welcome Back</div>
+      <div class="auth-sub">Sign in with your school email</div>
+      <div class="form-group">
+        <label class="form-label">Student Email</label>
+        <input class="form-input" type="email" placeholder="yourname@nexus.edu.sg" id="login-email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" placeholder="••••••••" id="login-pw" />
+      </div>
+      <button class="btn-primary" id="login-btn" onclick="doLogin()">
+        Sign In <i class="ti ti-arrow-right"></i>
+      </button>
+      <div class="divider">or</div>
+      <button class="btn-secondary" onclick="showScreen('screen-register')">Create an Account</button>
+      <div class="auth-switch"><a>Forgot password?</a></div>
+    </div>
+  </div>
+  <div class="toast-bar"><span class="toast" id="toast-login"></span></div>
+</div>
+
+<!-- ═══════ REGISTER ═══════ -->
+<div id="screen-register" class="screen">
+  <div class="back-header">
+    <button class="back-btn" onclick="showScreen('screen-login')" aria-label="Back">
+      <i class="ti ti-arrow-left"></i>
+    </button>
+    <div class="back-title">Create Account</div>
+  </div>
+  <div class="auth-wrap" style="padding-top:1.25rem">
+    <div class="auth-card">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" type="text" placeholder="Your full name" id="reg-name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Student Email</label>
+        <input class="form-input" type="email" placeholder="yourname@nexus.edu.sg" id="reg-email" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Year Group</label>
+        <select class="form-input" id="reg-grade">
+          <option value="">Select your year group</option>
+          <option>Year 7</option><option>Year 8</option><option>Year 9</option>
+          <option>Year 10</option><option>Year 11</option><option>Year 12</option>
+          <option>Teacher / Staff</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" placeholder="At least 8 characters" id="reg-pw" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input class="form-input" type="password" placeholder="Re-enter your password" id="reg-pw2" />
+      </div>
+      <button class="btn-primary" id="reg-btn" onclick="doRegister()">
+        Create Account <i class="ti ti-check"></i>
+      </button>
+      <div class="auth-switch">Already have an account? <a onclick="showScreen('screen-login')">Sign in</a></div>
+    </div>
+  </div>
+  <div class="toast-bar"><span class="toast" id="toast-reg"></span></div>
+</div>
+
+<!-- ═══════ HOME ═══════ -->
+<div id="screen-home" class="screen">
+  <div class="nav">
+    <div class="nav-logo">Nexus Music <span>Share</span></div>
+    <div class="nav-right">
+      <div class="nav-user">
+        <div class="avatar" id="home-avatar">A</div>
+        <span id="home-uname" style="font-size:12px;color:#fff">User</span>
+      </div>
+      <button class="nav-btn" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="home-hero">
+    <div class="school-tag">Nexus International School</div>
+    <div class="hero-title">Find an Instrument<br>Lend to a Classmate</div>
+    <div class="hero-sub">Students helping students — save money and share the music</div>
+    <div class="hero-stats">
+      <div><div class="hs-num" id="stat-avail">—</div><div class="hs-lbl">Available</div></div>
+      <div><div class="hs-num" id="stat-users">—</div><div class="hs-lbl">Members</div></div>
+      <div><div class="hs-num">$5~</div><div class="hs-lbl">From / week</div></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" id="tab-btn-browse" onclick="switchTab('browse')">Browse</div>
+    <div class="tab" id="tab-btn-mylist" onclick="switchTab('mylist')">My Listings</div>
+  </div>
+
+  <!-- browse tab -->
+  <div id="tab-browse">
+    <div class="search-row">
+      <input type="text" placeholder="Search by name or category…" id="search-inp" />
+      <button class="search-btn" onclick="renderBrowse()" aria-label="Search">
+        <i class="ti ti-search"></i>
+      </button>
+    </div>
+    <div class="pills" id="filter-pills">
+      <div class="pill active" onclick="setFilter(this,'All')">All</div>
+      <div class="pill" onclick="setFilter(this,'Strings')">🎸 Strings</div>
+      <div class="pill" onclick="setFilter(this,'Keyboard')">🎹 Keyboard</div>
+      <div class="pill" onclick="setFilter(this,'Wind')">🪈 Wind</div>
+      <div class="pill" onclick="setFilter(this,'Percussion')">🥁 Percussion</div>
+    </div>
+    <div class="cards-grid" id="browse-grid"></div>
+    <div class="fab">
+      <button class="fab-btn" onclick="openOverlay('ov-post')">
+        <i class="ti ti-plus"></i> List My Instrument
+      </button>
+    </div>
+  </div>
+
+  <!-- my listings tab -->
+  <div id="tab-mylist" style="display:none">
+    <div class="sec-header">
+      <i class="ti ti-music"></i> Instruments I'm Lending
+    </div>
+    <div class="my-listings" id="my-listings-wrap"></div>
+    <div class="fab">
+      <button class="fab-btn" onclick="openOverlay('ov-post')">
+        <i class="ti ti-plus"></i> Add Another Listing
+      </button>
+    </div>
+  </div>
+
+  <div class="toast-bar"><span class="toast" id="toast-home"></span></div>
+</div>
+
+</div><!-- /app -->
+
+<!-- ═══════ RENT MODAL ═══════ -->
+<div class="overlay" id="ov-rent">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="rent-title">Borrow Instrument</div>
+      <button class="close-x" onclick="closeOverlay('ov-rent')" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-sub" id="rent-sub">Owner: —</div>
+    <div class="form-label" style="margin-bottom:8px">Select rental dates (click a start and end date)</div>
+    <div class="cal-wrap">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calNav(-1)" aria-label="Previous month"><i class="ti ti-chevron-left"></i></button>
+        <div class="cal-month-lbl" id="cal-month-lbl"></div>
+        <button class="cal-nav-btn" onclick="calNav(1)" aria-label="Next month"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+    <div id="date-result" style="display:none">
+      <div class="date-row">
+        <div class="date-box"><div class="date-box-lbl">Start Date</div><div class="date-box-val" id="date-start-lbl">—</div></div>
+        <div class="date-box"><div class="date-box-lbl">End Date</div><div class="date-box-val" id="date-end-lbl">—</div></div>
+      </div>
+      <div class="fee-box">
+        <span class="fee-lbl">Estimated Total Fee</span>
+        <span class="fee-val" id="fee-val">—</span>
+      </div>
+    </div>
+    <button class="btn-primary" style="margin-top:12px" onclick="confirmRent()">
+      Confirm Booking <i class="ti ti-check"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════ POST MODAL ═══════ -->
+<div class="overlay" id="ov-post">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">List an Instrument</div>
+      <button class="close-x" onclick="closeOverlay('ov-post')" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-sub">Fill in the details so classmates can find your instrument</div>
+    <div class="form-group">
+      <label class="form-label">Instrument Name</label>
+      <input class="form-input" type="text" placeholder="e.g. Yamaha Digital Piano YDP-145" id="p-name" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <select class="form-input" id="p-cat">
+        <option>Strings</option><option>Keyboard</option><option>Wind</option><option>Percussion</option><option>Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Rental Fee ($ / week)</label>
+      <input class="form-input" type="number" placeholder="e.g. 15" min="1" id="p-price" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contact Details</label>
+      <input class="form-input" type="text" placeholder="School email or messaging handle" id="p-contact" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Condition / Notes</label>
+      <textarea class="form-input" placeholder="Brand, condition, accessories included…" id="p-desc"></textarea>
+    </div>
+    <button class="btn-primary" id="post-btn" onclick="submitPost()">
+      Publish Listing <i class="ti ti-arrow-right"></i>
+    </button>
+  </div>
+</div>
+
+<script>
+// ── Supabase init ──
+const SUPABASE_URL = 'https://kbhbpqtggujotmejmzkt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiaGJwcXRnZ3Vqb3RtZWptemt0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MzYyOTEsImV4cCI6MjA5NDQxMjI5MX0.isLCs717T7Ly18wbxruaDdSEdCM_1tJUW2TRmXvRXkM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const EMOJIS = { Strings:'🎸', Keyboard:'🎹', Wind:'🪈', Percussion:'🥁', Other:'🎵' };
+const BG = ['bg-t','bg-a','bg-c','bg-g'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOWS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+let currentUser = null;
+let currentProfile = null;
+let currentFilter = 'All';
+let allListings = [];
+let rentItem = null;
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let selStart = null, selEnd = null;
+
+/* ── init: check existing session ── */
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadProfile();
+    await enterHome();
+  } else {
+    showScreen('screen-login');
+  }
+}
+
+async function loadProfile() {
+  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  currentProfile = data;
+}
+
+/* ── screens ── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+/* ── auth ── */
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw    = document.getElementById('login-pw').value;
+  if (!email || !pw) { showToast('toast-login', 'Please enter your email and password', true); return; }
+  setLoading('login-btn', true);
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+  setLoading('login-btn', false);
+  if (error) { showToast('toast-login', 'Invalid email or password. Please try again.', true); return; }
+  currentUser = data.user;
+  await loadProfile();
+  await enterHome();
+}
+
+async function doRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const grade = document.getElementById('reg-grade').value;
+  const pw    = document.getElementById('reg-pw').value;
+  const pw2   = document.getElementById('reg-pw2').value;
+  if (!name || !email || !grade || !pw) { showToast('toast-reg', 'Please fill in all fields', true); return; }
+  if (pw.length < 8) { showToast('toast-reg', 'Password must be at least 8 characters', true); return; }
+  if (pw !== pw2) { showToast('toast-reg', 'Passwords do not match', true); return; }
+  setLoading('reg-btn', true);
+  const { data, error } = await sb.auth.signUp({
+    email, password: pw,
+    options: { data: { name, grade } }
+  });
+  setLoading('reg-btn', false);
+  if (error) { showToast('toast-reg', error.message, true); return; }
+  currentUser = data.user;
+  currentProfile = { name, grade };
+  await enterHome();
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  currentUser = null; currentProfile = null;
+  allListings = [];
+  showScreen('screen-login');
+}
+
+/* ── home ── */
+async function enterHome() {
+  const name = currentProfile?.name || currentUser.email.split('@')[0];
+  document.getElementById('home-avatar').textContent = name[0].toUpperCase();
+  document.getElementById('home-uname').textContent = name;
+  showScreen('screen-home');
+  await loadListings();
+  renderBrowse();
+  updateStats();
+}
+
+async function loadListings() {
+  const { data, error } = await sb.from('listings').select('*').order('created_at', { ascending: false });
+  if (!error) allListings = data || [];
+}
+
+function updateStats() {
+  document.getElementById('stat-avail').textContent = allListings.filter(l => l.available).length;
+}
+
+async function loadMemberCount() {
+  const { count } = await sb.from('profiles').select('*', { count: 'exact', head: true });
+  document.getElementById('stat-users').textContent = count ?? '—';
+}
+
+/* ── tabs ── */
+function switchTab(tab) {
+  document.getElementById('tab-btn-browse').classList.toggle('active', tab === 'browse');
+  document.getElementById('tab-btn-mylist').classList.toggle('active', tab === 'mylist');
+  document.getElementById('tab-browse').style.display = tab === 'browse' ? 'block' : 'none';
+  document.getElementById('tab-mylist').style.display = tab === 'mylist' ? 'block' : 'none';
+  if (tab === 'mylist') renderMyListings();
+}
+
+/* ── browse ── */
+function setFilter(el, cat) {
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  currentFilter = cat;
+  renderBrowse();
+}
+
+function renderBrowse() {
+  const q = document.getElementById('search-inp').value.trim().toLowerCase();
+  const data = allListings.filter(i => {
+    const mc = currentFilter === 'All' || i.cat === currentFilter;
+    const ms = !q || i.name.toLowerCase().includes(q) || i.cat.toLowerCase().includes(q) || i.owner_name.toLowerCase().includes(q);
+    return mc && ms;
+  });
+  const grid = document.getElementById('browse-grid');
+  if (!data.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="ti ti-mood-empty"></i>No instruments found</div>';
+    return;
+  }
+  grid.innerHTML = data.map((item, idx) => `
+    <div class="icard" onclick="openRentModal('${item.id}')">
+      <div class="icard-img ${BG[idx % 4]}">${EMOJIS[item.cat] || '🎵'}</div>
+      <div class="icard-body">
+        <div class="icard-name">${item.name}</div>
+        <div class="icard-owner"><i class="ti ti-user" style="font-size:11px"></i> ${item.owner_name}</div>
+        <div class="icard-foot">
+          <div class="price">$${item.price}<span>/wk</span></div>
+          <div class="badge ${item.available ? 'badge-ok' : 'badge-out'}">${item.available ? 'Available' : 'On Loan'}</div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+/* ── my listings ── */
+function renderMyListings() {
+  const mine = allListings.filter(l => l.user_id === currentUser.id);
+  const wrap = document.getElementById('my-listings-wrap');
+  if (!mine.length) {
+    wrap.innerHTML = '<div class="empty-state"><i class="ti ti-mood-empty"></i>No listings yet<br>Tap the button below to post your first instrument</div>';
+    return;
+  }
+  wrap.innerHTML = mine.map(item => `
+    <div class="listing-row">
+      <div class="listing-icon">${EMOJIS[item.cat] || '🎵'}</div>
+      <div class="listing-info">
+        <div class="listing-name">${item.name}</div>
+        <div class="listing-meta">$${item.price}/wk · ${item.cat} · ${item.contact}</div>
+      </div>
+      <div class="badge ${item.available ? 'badge-ok' : 'badge-out'}">${item.available ? 'Available' : 'On Loan'}</div>
+      <button class="listing-del" onclick="deleteListing('${item.id}')" title="Remove listing">
+        <i class="ti ti-trash"></i>
+      </button>
+    </div>`).join('');
+}
+
+async function deleteListing(id) {
+  if (!confirm('Remove this listing?')) return;
+  const { error } = await sb.from('listings').delete().eq('id', id);
+  if (error) { showToast('toast-home', 'Could not remove listing', true); return; }
+  allListings = allListings.filter(l => l.id !== id);
+  renderMyListings();
+  renderBrowse();
+  updateStats();
+  showToast('toast-home', 'Listing removed');
+}
+
+/* ── rent modal ── */
+function openRentModal(id) {
+  const item = allListings.find(l => l.id === id);
+  if (!item) return;
+  if (!item.available) { showToast('toast-home', 'This instrument is currently on loan', true); return; }
+  rentItem = item;
+  selStart = null; selEnd = null;
+  document.getElementById('rent-title').textContent = item.name;
+  document.getElementById('rent-sub').textContent = `Owner: ${item.owner_name} · Contact: ${item.contact} · $${item.price}/week`;
+  document.getElementById('date-result').style.display = 'none';
+  const now = new Date(); calYear = now.getFullYear(); calMonth = now.getMonth();
+  renderCal();
+  openOverlay('ov-rent');
+}
+
+/* ── calendar ── */
+function renderCal() {
+  document.getElementById('cal-month-lbl').textContent = `${MONTHS[calMonth]} ${calYear}`;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = DOWS.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  const first = new Date(calYear, calMonth, 1).getDay();
+  const days  = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (let i = 0; i < first; i++) grid.innerHTML += `<div class="cal-day empty"></div>`;
+  for (let d = 1; d <= days; d++) {
+    const dt = new Date(calYear, calMonth, d); dt.setHours(0,0,0,0);
+    const isPast = dt < today;
+    let cls = 'cal-day';
+    if (isPast) cls += ' past';
+    if (dt.getTime() === today.getTime()) cls += ' today';
+    if (selStart && dt.getTime() === selStart.getTime()) cls += ' sel-start';
+    if (selEnd   && dt.getTime() === selEnd.getTime())   cls += ' sel-end';
+    if (selStart && selEnd && dt > selStart && dt < selEnd) cls += ' sel-range';
+    grid.innerHTML += `<div class="${cls}" onclick="pickDay(${dt.getTime()})">${d}</div>`;
+  }
+}
+
+function calNav(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCal();
+}
+
+function pickDay(ts) {
+  const dt = new Date(ts);
+  const today = new Date(); today.setHours(0,0,0,0);
+  if (dt < today) return;
+  if (!selStart || selEnd) { selStart = dt; selEnd = null; }
+  else if (dt <= selStart)  { selStart = dt; selEnd = null; }
+  else { selEnd = dt; }
+  renderCal();
+  if (selStart && selEnd) {
+    const diff  = Math.round((selEnd - selStart) / (1000*60*60*24));
+    const weeks = Math.ceil(diff / 7) || 1;
+    const fee   = weeks * rentItem.price;
+    const fmt   = d => `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+    document.getElementById('date-start-lbl').textContent = fmt(selStart);
+    document.getElementById('date-end-lbl').textContent   = fmt(selEnd);
+    document.getElementById('fee-val').textContent        = `$${fee} (~${weeks} week${weeks>1?'s':''})`;
+    document.getElementById('date-result').style.display  = 'block';
+  } else {
+    document.getElementById('date-result').style.display = 'none';
+  }
+}
+
+async function confirmRent() {
+  if (!selStart || !selEnd) { showToast('toast-home', 'Please select a start and end date first', true); return; }
+  const { error } = await sb.from('listings').update({ available: false }).eq('id', rentItem.id);
+  if (error) { showToast('toast-home', 'Could not complete booking. Please try again.', true); return; }
+  const idx = allListings.findIndex(l => l.id === rentItem.id);
+  if (idx > -1) allListings[idx].available = false;
+  closeOverlay('ov-rent');
+  renderBrowse();
+  updateStats();
+  showToast('toast-home', `Booked! Contact ${rentItem.owner_name} to arrange pickup.`);
+  rentItem = null; selStart = null; selEnd = null;
+}
+
+/* ── post listing ── */
+async function submitPost() {
+  const name    = document.getElementById('p-name').value.trim();
+  const cat     = document.getElementById('p-cat').value;
+  const price   = parseInt(document.getElementById('p-price').value) || 0;
+  const contact = document.getElementById('p-contact').value.trim();
+  const desc    = document.getElementById('p-desc').value.trim();
+  if (!name || !price || !contact) { showToast('toast-home', 'Please fill in the name, fee, and contact', true); return; }
+  setLoading('post-btn', true);
+  const ownerName = currentProfile?.name || currentUser.email.split('@')[0];
+  const { data, error } = await sb.from('listings').insert({
+    user_id: currentUser.id,
+    owner_name: ownerName,
+    name, cat, price, contact,
+    description: desc,
+    available: true
+  }).select().single();
+  setLoading('post-btn', false);
+  if (error) { showToast('toast-home', 'Could not publish listing. Please try again.', true); return; }
+  allListings.unshift(data);
+  closeOverlay('ov-post');
+  document.getElementById('p-name').value    = '';
+  document.getElementById('p-price').value   = '';
+  document.getElementById('p-contact').value = '';
+  document.getElementById('p-desc').value    = '';
+  renderBrowse();
+  renderMyListings();
+  updateStats();
+  showToast('toast-home', `"${name}" is now listed!`);
+}
+
+/* ── overlays ── */
+function openOverlay(id)  { document.getElementById(id).classList.add('open'); }
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(ov => {
+  ov.addEventListener('click', e => { if (e.target === ov) closeOverlay(ov.id); });
+});
+
+/* ── toast ── */
+function showToast(id, msg, isError = false) {
+  const t = document.getElementById(id);
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.toggle('error', isError);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ── button loading state ── */
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  if (loading) btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>';
+}
+
+/* ── keyboard ── */
+document.getElementById('search-inp').addEventListener('keyup', e => { if (e.key === 'Enter') renderBrowse(); });
+document.getElementById('login-pw').addEventListener('keyup', e => { if (e.key === 'Enter') doLogin(); });
+
+/* ── spin animation ── */
+const style = document.createElement('style');
+style.textContent = '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+document.head.appendChild(style);
+
+/* ── start ── */
+init().then(() => loadMemberCount());
+</script>
+</body>
+</html>
