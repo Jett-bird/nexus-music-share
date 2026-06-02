@@ -74,9 +74,11 @@ textarea.form-input{resize:vertical;min-height:80px}
 .hs-lbl{font-size:10px;color:rgba(255,255,255,0.55);margin-top:1px}
 
 /* ── tabs ── */
-.tabs{display:flex;background:var(--surface);border-bottom:0.5px solid var(--border);position:sticky;top:52px;z-index:9}
-.tab{flex:1;padding:13px 0;text-align:center;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.15s}
-.tab.active{color:var(--t600);border-bottom-color:var(--t600)}
+.tabs{display:flex;background:var(--surface);border-top:0.5px solid var(--border);position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:680px;z-index:9}
+.tab{flex:1;padding:12px 0 14px;text-align:center;font-size:12px;font-weight:500;cursor:pointer;color:var(--muted);border-top:2px solid transparent;transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tab i{font-size:20px}
+.tab.active{color:var(--t600);border-top-color:var(--t600)}
+.tab-content-wrap{padding-bottom:70px}
 
 /* ── browse ── */
 .search-row{display:flex;gap:8px;padding:1rem 1.25rem 0}
@@ -277,9 +279,20 @@ textarea.form-input{resize:vertical;min-height:80px}
     </div>
   </div>
 
+  <div class="tab-content-wrap">
   <div class="tabs">
-    <div class="tab active" id="tab-btn-browse" onclick="switchTab('browse')">Browse</div>
-    <div class="tab" id="tab-btn-mylist" onclick="switchTab('mylist')">My Listings</div>
+    <div class="tab active" id="tab-btn-browse" onclick="switchTab('browse')">
+      <i class="ti ti-search"></i>Browse
+    </div>
+    <div class="tab" id="tab-btn-mylist" onclick="switchTab('mylist')">
+      <i class="ti ti-music"></i>My Listings
+    </div>
+    <div class="tab" id="tab-btn-myrent" onclick="switchTab('myrent')">
+      <i class="ti ti-calendar"></i>My Rent
+    </div>
+    <div class="tab" id="tab-btn-chat" onclick="switchTab('chat')">
+      <i class="ti ti-message"></i>Chat
+    </div>
   </div>
 
   <!-- browse tab -->
@@ -294,7 +307,8 @@ textarea.form-input{resize:vertical;min-height:80px}
       <div class="pill active" onclick="setFilter(this,'All')">All</div>
       <div class="pill" onclick="setFilter(this,'Strings')">🎸 Strings</div>
       <div class="pill" onclick="setFilter(this,'Keyboard')">🎹 Keyboard</div>
-      <div class="pill" onclick="setFilter(this,'Wind')">🪈 Wind</div>
+      <div class="pill" onclick="setFilter(this,'Woodwind')">🪈 Woodwind</div>
+      <div class="pill" onclick="setFilter(this,'Brass')">🎺 Brass</div>
       <div class="pill" onclick="setFilter(this,'Percussion')">🥁 Percussion</div>
     </div>
     <div class="cards-grid" id="browse-grid"></div>
@@ -318,7 +332,28 @@ textarea.form-input{resize:vertical;min-height:80px}
     </div>
   </div>
 
+  <!-- my rent tab -->
+  <div id="tab-myrent" style="display:none">
+    <div class="sec-header">
+      <i class="ti ti-calendar"></i> Instruments I'm Renting
+    </div>
+    <div class="my-listings" id="my-rent-wrap">
+      <div class="empty-state"><i class="ti ti-mood-empty"></i>No active rentals yet</div>
+    </div>
+  </div>
+
+  <!-- chat tab -->
+  <div id="tab-chat" style="display:none">
+    <div class="sec-header">
+      <i class="ti ti-message"></i> Messages
+    </div>
+    <div class="my-listings" id="chat-wrap">
+      <div class="empty-state"><i class="ti ti-message-off"></i>Chat coming soon</div>
+    </div>
+  </div>
+
   <div class="toast-bar"><span class="toast" id="toast-home"></span></div>
+  </div><!-- /tab-content-wrap -->
 </div>
 
 </div><!-- /app -->
@@ -366,12 +401,26 @@ textarea.form-input{resize:vertical;min-height:80px}
     <div class="modal-sub">Fill in the details so classmates can find your instrument</div>
     <div class="form-group">
       <label class="form-label">Instrument Name</label>
-      <input class="form-input" type="text" placeholder="e.g. Yamaha Digital Piano YDP-145" id="p-name" />
+      <input class="form-input" type="text" placeholder="e.g. Digital Piano YDP-145" id="p-name" />
     </div>
     <div class="form-group">
       <label class="form-label">Category</label>
       <select class="form-input" id="p-cat">
-        <option>Strings</option><option>Keyboard</option><option>Wind</option><option>Percussion</option><option>Other</option>
+        <option>Strings</option><option>Keyboard</option><option>Woodwind</option><option>Brass</option><option>Percussion</option><option>Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Brand</label>
+      <input class="form-input" type="text" placeholder="e.g. Yamaha, Roland, Pearl" id="p-brand" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Condition</label>
+      <select class="form-input" id="p-condition">
+        <option value="">Select condition</option>
+        <option>Like New</option>
+        <option>Good</option>
+        <option>Fair</option>
+        <option>Needs Repair</option>
       </select>
     </div>
     <div class="form-group">
@@ -379,12 +428,8 @@ textarea.form-input{resize:vertical;min-height:80px}
       <input class="form-input" type="number" placeholder="e.g. 15" min="1" id="p-price" />
     </div>
     <div class="form-group">
-      <label class="form-label">Contact Details</label>
-      <input class="form-input" type="text" placeholder="School email or messaging handle" id="p-contact" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">Condition / Notes</label>
-      <textarea class="form-input" placeholder="Brand, condition, accessories included…" id="p-desc"></textarea>
+      <label class="form-label">Notes</label>
+      <textarea class="form-input" placeholder="Accessories included, extra details…" id="p-desc"></textarea>
     </div>
     <button class="btn-primary" id="post-btn" onclick="submitPost()">
       Publish Listing <i class="ti ti-arrow-right"></i>
@@ -405,7 +450,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   }
 });
 
-const EMOJIS = { Strings:'🎸', Keyboard:'🎹', Wind:'🪈', Percussion:'🥁', Other:'🎵' };
+const EMOJIS = { Strings:'🎸', Keyboard:'🎹', Woodwind:'🪈', Brass:'🎺', Percussion:'🥁', Other:'🎵' };
 const BG = ['bg-t','bg-a','bg-c','bg-g'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DOWS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -527,10 +572,10 @@ async function loadMemberCount() {
 
 /* ── tabs ── */
 function switchTab(tab) {
-  document.getElementById('tab-btn-browse').classList.toggle('active', tab === 'browse');
-  document.getElementById('tab-btn-mylist').classList.toggle('active', tab === 'mylist');
-  document.getElementById('tab-browse').style.display = tab === 'browse' ? 'block' : 'none';
-  document.getElementById('tab-mylist').style.display = tab === 'mylist' ? 'block' : 'none';
+  ['browse','mylist','myrent','chat'].forEach(t => {
+    document.getElementById(`tab-btn-${t}`).classList.toggle('active', tab === t);
+    document.getElementById(`tab-${t}`).style.display = tab === t ? 'block' : 'none';
+  });
   if (tab === 'mylist') renderMyListings();
 }
 
@@ -583,7 +628,7 @@ function renderMyListings() {
         <div class="listing-name">${item.name}</div>
         <div class="listing-meta">$${item.price}/wk · ${item.cat} · ${item.contact}</div>
       </div>
-      <div class="badge ${item.available ? 'badge-ok' : 'badge-out'}">${item.available ? 'Available' : 'On Loan'}</div>
+      <button class="badge ${item.available ? 'badge-ok' : 'badge-out'}" onclick="toggleAvailability('${item.id}')" style="border:none;cursor:pointer" title="Toggle availability">${item.available ? 'Available' : 'On Loan'}</button>
       <button class="listing-del" onclick="deleteListing('${item.id}')" title="Remove listing">
         <i class="ti ti-trash"></i>
       </button>
@@ -602,9 +647,22 @@ async function deleteListing(id) {
 }
 
 /* ── rent modal ── */
+async function toggleAvailability(id) {
+  const item = allListings.find(l => l.id === id);
+  if (!item) return;
+  const newVal = !item.available;
+  const { error } = await sb.from('listings').update({ available: newVal }).eq('id', id);
+  if (error) { showToast('toast-home', 'Could not update availability', true); return; }
+  item.available = newVal;
+  renderBrowse();
+  updateStats();
+  showToast('toast-home', `Marked as ${newVal ? 'Available' : 'On Loan'}`);
+}
+
 function openRentModal(id) {
   const item = allListings.find(l => l.id === id);
   if (!item) return;
+  if (item.user_id === currentUser.id) { showToast('toast-home', "That's your own listing — use My Listings to change availability", true); return; }
   if (!item.available) { showToast('toast-home', 'This instrument is currently on loan', true); return; }
   rentItem = item;
   selStart = null; selEnd = null;
@@ -685,16 +743,18 @@ async function submitPost() {
   const name    = document.getElementById('p-name').value.trim();
   const cat     = document.getElementById('p-cat').value;
   const price   = parseInt(document.getElementById('p-price').value) || 0;
-  const contact = document.getElementById('p-contact').value.trim();
-  const desc    = document.getElementById('p-desc').value.trim();
-  if (!name || !price || !contact) { showToast('toast-home', 'Please fill in the name, fee, and contact', true); return; }
+  const contact = currentUser.email;
+  const brand     = document.getElementById('p-brand').value.trim();
+  const condition = document.getElementById('p-condition').value;
+  const desc      = document.getElementById('p-desc').value.trim();
+  if (!name || !price) { showToast('toast-home', 'Please fill in the instrument name and fee', true); return; }
   setLoading('post-btn', true);
   const ownerName = currentProfile?.name || currentUser.email.split('@')[0];
   const { data, error } = await sb.from('listings').insert({
     user_id: currentUser.id,
     owner_name: ownerName,
     name, cat, price, contact,
-    description: desc,
+    brand, condition, description: desc,
     available: true
   }).select().single();
   setLoading('post-btn', false);
@@ -704,7 +764,9 @@ async function submitPost() {
   document.getElementById('p-name').value    = '';
   document.getElementById('p-price').value   = '';
   document.getElementById('p-contact').value = '';
-  document.getElementById('p-desc').value    = '';
+  document.getElementById('p-brand').value     = '';
+  document.getElementById('p-condition').value = '';
+  document.getElementById('p-desc').value      = '';
   renderBrowse();
   renderMyListings();
   updateStats();
