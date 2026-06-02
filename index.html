@@ -127,6 +127,16 @@ textarea.form-input{resize:vertical;min-height:80px}
 .listing-meta{font-size:11px;color:var(--muted);margin-top:3px}
 .listing-del{background:none;border:none;cursor:pointer;color:var(--hint);font-size:18px;padding:4px;transition:color 0.12s;flex-shrink:0}
 .listing-del:hover{color:var(--c400)}
+.req-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px}
+.req-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.req-name{font-weight:500;font-size:14px;color:var(--text)}
+.req-meta{font-size:12px;color:var(--muted);margin-bottom:10px}
+.req-actions{display:flex;gap:8px}
+.req-accept{flex:1;background:var(--t600);color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer}
+.req-decline{flex:1;background:transparent;color:var(--c400);border:1px solid var(--c400);border-radius:8px;padding:9px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer}
+.badge-pending{background:#FEF3C7;color:#92400E}
+.badge-accepted{background:var(--t50);color:var(--t800)}
+.badge-declined{background:var(--c50);color:var(--c600)}
 
 /* ── overlays ── */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
@@ -262,7 +272,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.18</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.19</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar">A</div>
@@ -296,6 +306,9 @@ textarea.form-input{resize:vertical;min-height:80px}
     </div>
     <div class="tab" id="tab-btn-chat" onclick="switchTab('chat')">
       <i class="ti ti-message"></i>Chat
+    </div>
+    <div class="tab" id="tab-btn-account" onclick="switchTab('account')">
+      <i class="ti ti-user-circle"></i>Account
     </div>
   </div>
 
@@ -348,12 +361,10 @@ textarea.form-input{resize:vertical;min-height:80px}
 
   <!-- chat tab -->
   <div id="tab-chat" style="display:none">
-    <div class="sec-header">
-      <i class="ti ti-message"></i> Messages
-    </div>
-    <div class="my-listings" id="chat-wrap">
-      <div class="empty-state"><i class="ti ti-message-off"></i>Chat coming soon</div>
-    </div>
+    <div class="sec-header"><i class="ti ti-inbox"></i> Incoming Requests</div>
+    <div class="my-listings" id="chat-incoming"></div>
+    <div class="sec-header" style="margin-top:4px"><i class="ti ti-send"></i> My Requests</div>
+    <div class="my-listings" id="chat-outgoing"></div>
   </div>
 
   <div class="toast-bar"><span class="toast" id="toast-home"></span></div>
@@ -604,6 +615,7 @@ function switchTab(tab) {
     document.getElementById(`tab-${t}`).style.display = tab === t ? 'block' : 'none';
   });
   if (tab === 'mylist') renderMyListings();
+  if (tab === 'chat') renderChat();
 }
 
 /* ── browse ── */
@@ -781,15 +793,74 @@ function pickDay(ts) {
 
 async function confirmRent() {
   if (!selStart || !selEnd) { showToast('toast-home', 'Please select a start and end date first', true); return; }
-  const { error } = await sb.from('listings').update({ available: false }).eq('id', rentItem.id);
-  if (error) { showToast('toast-home', 'Could not complete booking. Please try again.', true); return; }
-  const idx = allListings.findIndex(l => l.id === rentItem.id);
-  if (idx > -1) allListings[idx].available = false;
+  const diff  = Math.round((selEnd - selStart) / (1000*60*60*24));
+  const weeks = Math.ceil(diff / 7) || 1;
+  const fee   = `$${weeks * rentItem.price} (~${weeks} week${weeks>1?'s':''})`;
+  const fmt   = d => `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+  const borrowerName = currentProfile?.name || currentUser.email.split('@')[0];
+  const { error } = await sb.from('requests').insert({
+    listing_id: rentItem.id,
+    borrower_id: currentUser.id,
+    borrower_name: borrowerName,
+    borrower_email: currentUser.email,
+    owner_id: rentItem.user_id,
+    instrument_name: rentItem.name,
+    start_date: fmt(selStart),
+    end_date: fmt(selEnd),
+    fee,
+    status: 'pending'
+  });
+  if (error) { showToast('toast-home', 'Could not send request. Please try again.', true); return; }
   closeOverlay('ov-rent');
-  renderBrowse();
-  updateStats();
-  showToast('toast-home', `Booked! Contact ${rentItem.owner_name} to arrange pickup.`);
+  showToast('toast-home', `Request sent to ${rentItem.owner_name}! Check Chat for updates.`);
   rentItem = null; selStart = null; selEnd = null;
+}
+
+/* ── chat / requests ── */
+async function renderChat() {
+  const { data, error } = await sb.from('requests').select('*').order('created_at', { ascending: false });
+  if (error) return;
+  const incoming = (data || []).filter(r => r.owner_id === currentUser.id);
+  const outgoing = (data || []).filter(r => r.borrower_id === currentUser.id);
+
+  const inWrap = document.getElementById('chat-incoming');
+  const outWrap = document.getElementById('chat-outgoing');
+
+  inWrap.innerHTML = incoming.length ? incoming.map(r => `
+    <div class="req-card">
+      <div class="req-top">
+        <div class="req-name">${r.instrument_name}</div>
+        <div class="badge badge-${r.status}">${r.status.charAt(0).toUpperCase()+r.status.slice(1)}</div>
+      </div>
+      <div class="req-meta">From: ${r.borrower_name} (${r.borrower_email})<br>${r.start_date} → ${r.end_date} · ${r.fee}</div>
+      ${r.status === 'pending' ? `
+      <div class="req-actions">
+        <button class="req-accept" onclick="respondRequest('${r.id}','${r.listing_id}','accepted')">Accept</button>
+        <button class="req-decline" onclick="respondRequest('${r.id}','${r.listing_id}','declined')">Decline</button>
+      </div>` : ''}
+    </div>`).join('') : '<div class="empty-state"><i class="ti ti-inbox"></i>No incoming requests</div>';
+
+  outWrap.innerHTML = outgoing.length ? outgoing.map(r => `
+    <div class="req-card">
+      <div class="req-top">
+        <div class="req-name">${r.instrument_name}</div>
+        <div class="badge badge-${r.status}">${r.status.charAt(0).toUpperCase()+r.status.slice(1)}</div>
+      </div>
+      <div class="req-meta">${r.start_date} → ${r.end_date} · ${r.fee}</div>
+    </div>`).join('') : '<div class="empty-state"><i class="ti ti-send"></i>No outgoing requests</div>';
+}
+
+async function respondRequest(reqId, listingId, status) {
+  const { error } = await sb.from('requests').update({ status }).eq('id', reqId);
+  if (error) { showToast('toast-home', 'Could not update request', true); return; }
+  if (status === 'accepted') {
+    await sb.from('listings').update({ available: false, status: 'on_loan' }).eq('id', listingId);
+    const item = allListings.find(l => l.id === listingId);
+    if (item) { item.available = false; item.status = 'on_loan'; }
+    renderBrowse(); updateStats();
+  }
+  renderChat();
+  showToast('toast-home', status === 'accepted' ? 'Request accepted!' : 'Request declined');
 }
 
 /* ── post listing ── */
