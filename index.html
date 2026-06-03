@@ -900,6 +900,10 @@ async function renderMyRent() {
 /* ── chat / requests ── */
 function reqCard(r, isIncoming, ownerName) {
   const statusLabel = r.status.charAt(0).toUpperCase() + r.status.slice(1);
+  const msgKey = `req-${r.id}`;
+  const otherId = isIncoming ? r.borrower_id : r.owner_id;
+  const otherName = isIncoming ? r.borrower_name : (ownerName || 'Owner');
+  threadMap[msgKey] = { receiverId: otherId, receiverName: otherName, subject: r.instrument_name, reqId: r.id };
   return `<div class="req-card">
     <div class="req-top">
       <div class="req-name">${r.instrument_name}</div>
@@ -912,7 +916,7 @@ function reqCard(r, isIncoming, ownerName) {
       <button class="req-decline" onclick="respondRequest('${r.id}','${r.listing_id}','declined','${r.borrower_id}')">Decline</button>
     </div>` : ''}
     <div style="margin-top:8px">
-      <button class="req-accept" style="width:auto;padding:7px 16px;font-size:12px" onclick="openThread('${isIncoming ? r.borrower_id : r.owner_id}','${isIncoming ? r.borrower_name : (ownerName||'Owner')}','${r.instrument_name}','${r.id}')">
+      <button class="req-accept" style="width:auto;padding:7px 16px;font-size:12px" onclick="openThreadByKey('${msgKey}')">
         <i class="ti ti-message"></i> Message
       </button>
     </div>
@@ -1013,10 +1017,15 @@ async function respondRequest(reqId, listingId, status, borrowerId) {
 let threadReceiverId = null;
 let threadRequestId = null;
 let threadInterval = null;
+const threadMap = {}; // key → {receiverId, receiverName, subject, reqId}
+
+function storeThread(key, receiverId, receiverName, subject, reqId) {
+  threadMap[key] = { receiverId, receiverName, subject, reqId };
+}
 
 async function openThread(receiverId, receiverName, subject, reqId) {
-  threadReceiverId = receiverId;
-  threadRequestId = reqId;
+  threadReceiverId = receiverId || null;
+  threadRequestId = (reqId && reqId !== 'null' && reqId !== '') ? reqId : null;
   document.getElementById('thread-title').textContent = `${receiverName} · ${subject}`;
   document.getElementById('thread-messages').innerHTML = '';
   document.getElementById('screen-thread').style.display = 'flex';
