@@ -278,7 +278,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.38</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.44</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -1035,6 +1035,11 @@ function storeThread(key, receiverId, receiverName, subject, reqId) {
 function openThreadByKey(key) {
   const t = threadMap[key];
   if (!t) return;
+  // if called from Requests tab, switch to Chat first
+  const activeTab = document.querySelector('.tab.active')?.id;
+  if (activeTab === 'tab-btn-apply') {
+    switchTab('chat');
+  }
   openThread(t.receiverId, t.receiverName, t.subject, t.reqId);
 }
 
@@ -1090,9 +1095,9 @@ async function loadMessages() {
     const avatarEl = avatarUrl
       ? `<img src="${avatarUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
       : `<div style="width:28px;height:28px;border-radius:50%;background:var(--t400);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">${avatarLetter}</div>`;
-    return `<div style="display:flex;align-items:flex-end;gap:8px;flex-direction:${mine ? 'row-reverse' : 'row'}">
+    return `<div style="display:flex;align-items:flex-end;gap:8px;flex-direction:${mine ? 'row-reverse' : 'row'};width:100%">
       ${avatarEl}
-      <div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'}">
+      <div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'};flex:1;min-width:0">
         <div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">${bubbleContent}</div>
         <div class="msg-time">${time}</div>
       </div>
@@ -1303,12 +1308,12 @@ window.addEventListener('popstate', () => {
 init().then(() => { loadMemberCount(); startRealtime(); });
 </script>
 <!-- ═══════ CHAT THREAD ═══════ -->
-<div id="screen-thread" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:200;flex-direction:column">
+<div id="screen-thread" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:200;display:none;flex-direction:column">
   <div class="back-header">
     <button class="back-btn" onclick="closeThread()"><i class="ti ti-arrow-left"></i></button>
     <div class="back-title" id="thread-title">Chat</div>
   </div>
-  <div id="thread-messages" style="flex:1;overflow-y:auto;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:10px;padding-bottom:80px"></div>
+  <div id="thread-messages" style="flex:1;overflow-y:auto;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:10px;padding-bottom:80px;width:100%;box-sizing:border-box"></div>
   <div style="position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-top:0.5px solid var(--border);padding:10px 1.25rem;display:flex;gap:8px;align-items:center">
     <label style="cursor:pointer;color:var(--muted);font-size:22px;line-height:1;padding:4px" title="Send photo">
       <i class="ti ti-camera"></i>
