@@ -20,7 +20,7 @@
   --text:#1a1a1a;--muted:#666;--hint:#aaa;
 }
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.app{max-width:680px;margin:0 auto;min-height:100vh;background:var(--bg)}
+.app{width:100%;min-height:100vh;background:var(--bg)}
 
 /* ── nav ── */
 .nav{background:var(--t800);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:10}
@@ -75,7 +75,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 .hero-deco{position:absolute;right:0;top:0;bottom:0;width:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;opacity:0.08;font-size:40px}
 
 /* ── tabs ── */
-.tabs{display:flex;background:var(--surface);border-top:0.5px solid var(--border);position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:680px;z-index:9}
+.tabs{display:flex;background:var(--surface);border-top:0.5px solid var(--border);position:fixed;bottom:0;left:0;right:0;z-index:9}
 .tab{flex:1;padding:12px 0 14px;text-align:center;font-size:12px;font-weight:500;cursor:pointer;color:var(--muted);border-top:2px solid transparent;transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:3px}
 .tab i{font-size:20px}
 .tab.active{color:var(--t600);border-top-color:var(--t600)}
@@ -92,16 +92,16 @@ textarea.form-input{resize:vertical;min-height:80px}
 .pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;white-space:nowrap;cursor:pointer;color:var(--muted);transition:all 0.15s;user-select:none}
 .pill:hover{border-color:var(--t400);color:var(--t600)}
 .pill.active{background:var(--t400);border-color:var(--t400);color:#fff}
-.cards-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px 1.25rem 0}
-.icard{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform 0.12s,border-color 0.12s}
+.cards-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 1rem 0}
+.icard{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:transform 0.12s,border-color 0.12s}
 .icard:hover{transform:translateY(-2px);border-color:var(--t200)}
-.icard-img{height:88px;display:flex;align-items:center;justify-content:center;font-size:42px}
+.icard-img{height:60px;display:flex;align-items:center;justify-content:center;font-size:28px}
 .bg-t{background:var(--t50)}.bg-a{background:var(--a50)}.bg-c{background:var(--c50)}.bg-g{background:var(--g50)}
-.icard-body{padding:10px 12px 12px}
-.icard-name{font-weight:500;font-size:13px;color:var(--text);margin-bottom:3px}
-.icard-owner{font-size:11px;color:var(--muted);margin-bottom:7px;display:flex;align-items:center;gap:4px}
+.icard-body{padding:7px 8px 9px}
+.icard-name{font-weight:500;font-size:11px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icard-owner{font-size:10px;color:var(--muted);margin-bottom:5px;display:flex;align-items:center;gap:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .icard-foot{display:flex;justify-content:space-between;align-items:center}
-.price{font-family:'Playfair Display',serif;font-weight:700;font-size:15px;color:var(--t600)}
+.price{font-family:'Playfair Display',serif;font-weight:700;font-size:12px;color:var(--t600)}
 .price span{font-size:10px;font-weight:400;font-family:'DM Sans',sans-serif;color:var(--hint)}
 .badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:500}
 .badge-ok{background:var(--t50);color:var(--t800)}
@@ -278,7 +278,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.44</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.46</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
