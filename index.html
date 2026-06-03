@@ -278,7 +278,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.27</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.29</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar">A</div>
@@ -1008,7 +1008,14 @@ async function sendMessage() {
   if (!content) return;
   const myName = currentProfile?.name || currentUser.email.split('@')[0];
   input.value = '';
-  await sb.from('messages').insert({ sender_id: currentUser.id, receiver_id: threadReceiverId, sender_name: myName, content, request_id: threadRequestId });
+  const { error } = await sb.from('messages').insert({
+    sender_id: currentUser.id,
+    receiver_id: threadReceiverId,
+    sender_name: myName,
+    content,
+    request_id: threadRequestId || null
+  });
+  if (error) { showToast('toast-home', 'Could not send: ' + error.message, true); input.value = content; return; }
   await loadMessages();
 }
 
@@ -1153,8 +1160,13 @@ function startRealtime() {
 }
 
 /* ── block back button ── */
+history.pushState(null, '', window.location.pathname);
 window.addEventListener('popstate', () => {
-  if (currentUser) history.pushState(null, '', window.location.pathname);
+  history.pushState(null, '', window.location.pathname);
+  // if chat thread is open, close it instead
+  if (document.getElementById('screen-thread').style.display === 'flex') {
+    closeThread();
+  }
 });
 
 /* ── start ── */
