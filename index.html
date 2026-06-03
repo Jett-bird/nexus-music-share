@@ -278,7 +278,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.29</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.32</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar">A</div>
@@ -366,9 +366,10 @@ textarea.form-input{resize:vertical;min-height:80px}
     <div class="my-listings" id="my-rent-wrap"></div>
   </div>
 
-  <!-- chat tab (messages only) -->
+  <!-- chat tab -->
   <div id="tab-chat" style="display:none">
-    <div class="empty-state"><i class="ti ti-message"></i>Open a request to start messaging</div>
+    <div class="sec-header"><i class="ti ti-message"></i> Messages</div>
+    <div class="my-listings" id="chat-conversations"></div>
   </div>
 
   <!-- chat thread screen -->
@@ -658,7 +659,7 @@ function switchTab(tab) {
   });
   if (tab === 'mylist') { renderMyListings(); renderIncoming(); renderOutgoing(); }
   if (tab === 'myrent') renderMyRent();
-  if (tab === 'chat') { renderOutgoing(); unreadMessages = 0; showChatDot(false); }
+  if (tab === 'chat') { renderConversations(); renderOutgoing(); unreadMessages = 0; showChatDot(false); }
   if (tab === 'account') renderAccount();
 }
 
@@ -899,7 +900,7 @@ async function renderMyRent() {
 }
 
 /* ── chat / requests ── */
-function reqCard(r, isIncoming) {
+function reqCard(r, isIncoming, ownerName) {
   const statusLabel = r.status.charAt(0).toUpperCase() + r.status.slice(1);
   return `<div class="req-card">
     <div class="req-top">
@@ -911,13 +912,65 @@ function reqCard(r, isIncoming) {
     <div class="req-actions">
       <button class="req-accept" onclick="respondRequest('${r.id}','${r.listing_id}','accepted','${r.borrower_id}')">Accept</button>
       <button class="req-decline" onclick="respondRequest('${r.id}','${r.listing_id}','declined','${r.borrower_id}')">Decline</button>
-    </div>` : r.status !== 'pending' ? `
+    </div>` : ''}
     <div style="margin-top:8px">
-      <button class="req-accept" style="width:auto;padding:7px 16px;font-size:12px" onclick="openThread('${isIncoming ? r.borrower_id : r.owner_id}','${isIncoming ? r.borrower_name : 'Owner'}','${r.instrument_name}','${r.id}')">
+      <button class="req-accept" style="width:auto;padding:7px 16px;font-size:12px" onclick="openThread('${isIncoming ? r.borrower_id : r.owner_id}','${isIncoming ? r.borrower_name : (ownerName||'Owner')}','${r.instrument_name}','${r.id}')">
         <i class="ti ti-message"></i> Message
       </button>
-    </div>` : ''}
+    </div>
   </div>`;
+}
+
+async function renderConversations() {
+  const wrap = document.getElementById('chat-conversations');
+  if (!wrap) return;
+  // get all messages involving current user
+  const { data } = await sb.from('messages').select('*')
+    .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+    .order('created_at', { ascending: false });
+  if (!data || !data.length) {
+    wrap.innerHTML = '<div class="empty-state"><i class="ti ti-message-off"></i>No conversations yet</div>';
+    return;
+  }
+  // group by the other person
+  const seen = new Set();
+  const convos = [];
+  for (const m of data) {
+    const otherId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
+    const otherName = m.sender_id === currentUser.id ? 'them' : m.sender_name;
+    if (!seen.has(otherId)) {
+      seen.add(otherId);
+      convos.push({ otherId, otherName, lastMsg: m.content, time: m.created_at, reqId: m.request_id });
+    }
+  }
+  // get names from requests + profiles
+  const { data: reqs } = await sb.from('requests').select('id,borrower_id,borrower_name,owner_id,instrument_name')
+    .or(`borrower_id.eq.${currentUser.id},owner_id.eq.${currentUser.id}`);
+  // collect owner IDs to look up their names
+  const ownerIds = [...new Set((reqs || []).filter(r => r.owner_id !== currentUser.id).map(r => r.owner_id))];
+  const { data: ownerProfiles } = ownerIds.length
+    ? await sb.from('profiles').select('id,name').in('id', ownerIds)
+    : { data: [] };
+  const ownerNameMap = {};
+  (ownerProfiles || []).forEach(p => { ownerNameMap[p.id] = p.name; });
+  const nameMap = {};
+  (reqs || []).forEach(r => {
+    if (r.borrower_id !== currentUser.id) nameMap[r.borrower_id] = { name: r.borrower_name, subject: r.instrument_name, reqId: r.id };
+    if (r.owner_id !== currentUser.id) nameMap[r.owner_id] = { name: ownerNameMap[r.owner_id] || 'Owner', subject: r.instrument_name, reqId: r.id };
+  });
+  wrap.innerHTML = convos.map(c => {
+    const info = nameMap[c.otherId] || { name: c.otherName, subject: '', reqId: c.reqId };
+    const preview = c.lastMsg.startsWith('📷') ? '📷 Photo' : c.lastMsg.slice(0, 40) + (c.lastMsg.length > 40 ? '…' : '');
+    const time = new Date(c.time).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    return `<div class="listing-row" style="cursor:pointer" onclick="openThread('${c.otherId}','${info.name}','${info.subject}','${info.reqId || ''}')">
+      <div class="listing-icon" style="background:var(--t50);font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--t600)">${info.name[0].toUpperCase()}</div>
+      <div class="listing-info">
+        <div class="listing-name">${info.name}${info.subject ? ' · ' + info.subject : ''}</div>
+        <div class="listing-meta">${preview}</div>
+      </div>
+      <div style="font-size:10px;color:var(--hint)">${time}</div>
+    </div>`;
+  }).join('');
 }
 
 async function renderIncoming() {
@@ -931,7 +984,13 @@ async function renderOutgoing() {
   const { data } = await sb.from('requests').select('*').eq('borrower_id', currentUser.id).order('created_at', { ascending: false });
   const wrap = document.getElementById('chat-outgoing');
   if (!wrap) return;
-  wrap.innerHTML = (data && data.length) ? data.map(r => reqCard(r, false)).join('') : '<div class="empty-state"><i class="ti ti-send"></i>No outgoing requests</div>';
+  if (!data || !data.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-send"></i>No outgoing requests</div>'; return; }
+  // fetch owner names
+  const ownerIds = [...new Set(data.map(r => r.owner_id))];
+  const { data: profiles } = await sb.from('profiles').select('id,name').in('id', ownerIds);
+  const profileMap = {};
+  (profiles || []).forEach(p => { profileMap[p.id] = p.name; });
+  wrap.innerHTML = data.map(r => reqCard(r, false, profileMap[r.owner_id] || 'Owner')).join('');
 }
 
 async function renderChat() { await renderIncoming(); await renderOutgoing(); }
@@ -978,8 +1037,10 @@ function closeThread() {
 }
 
 async function loadMessages() {
+  if (!threadReceiverId) return;
   const { data } = await sb.from('messages').select('*')
-    .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${threadReceiverId}),and(sender_id.eq.${threadReceiverId},receiver_id.eq.${currentUser.id})`)
+    .in('sender_id', [currentUser.id, threadReceiverId])
+    .in('receiver_id', [currentUser.id, threadReceiverId])
     .order('created_at', { ascending: true });
   const wrap = document.getElementById('thread-messages');
   if (!data || !data.length) {
@@ -1147,13 +1208,14 @@ function startRealtime() {
       const m = payload.new;
       const threadOpen = document.getElementById('screen-thread').style.display === 'flex';
       if (threadOpen && m.sender_id === threadReceiverId) {
-        // thread is open with this person → just refresh messages
         loadMessages();
       } else {
-        // thread not open → show red dot
         unreadMessages++;
         showChatDot(true);
         showToast('toast-home', `💬 New message from ${m.sender_name}`);
+        // refresh conversation list if chat tab is open
+        const activeTab = document.querySelector('.tab.active')?.id;
+        if (activeTab === 'tab-btn-chat') renderConversations();
       }
     })
     .subscribe();
