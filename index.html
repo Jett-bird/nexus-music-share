@@ -278,7 +278,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.25</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.27</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar">A</div>
@@ -311,7 +311,10 @@ textarea.form-input{resize:vertical;min-height:80px}
       <i class="ti ti-calendar"></i>My Rent
     </div>
     <div class="tab" id="tab-btn-chat" onclick="switchTab('chat')">
-      <i class="ti ti-message"></i>Chat
+      <div style="position:relative;display:inline-block">
+        <i class="ti ti-message"></i>
+        <span id="chat-dot" style="display:none;position:absolute;top:-2px;right:-4px;width:8px;height:8px;background:#e53e3e;border-radius:50%;border:1.5px solid var(--surface)"></span>
+      </div>Chat
     </div>
     <div class="tab" id="tab-btn-account" onclick="switchTab('account')">
       <i class="ti ti-user-circle"></i>Account
@@ -369,21 +372,6 @@ textarea.form-input{resize:vertical;min-height:80px}
   </div>
 
   <!-- chat thread screen -->
-  <div id="screen-thread" style="display:none;flex-direction:column;height:100vh">
-    <div class="back-header" style="position:sticky;top:0">
-      <button class="back-btn" onclick="closeThread()"><i class="ti ti-arrow-left"></i></button>
-      <div class="back-title" id="thread-title">Chat</div>
-    </div>
-    <div id="thread-messages" style="flex:1;overflow-y:auto;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:10px;padding-bottom:80px"></div>
-    <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:680px;background:var(--surface);border-top:0.5px solid var(--border);padding:10px 1.25rem;display:flex;gap:8px;align-items:center">
-      <label style="cursor:pointer;color:var(--muted);font-size:22px;line-height:1;padding:4px" title="Send photo">
-        <i class="ti ti-camera"></i>
-        <input type="file" accept="image/*" capture="environment" id="photo-input" style="display:none" onchange="sendPhoto(this)" />
-      </label>
-      <input class="form-input" type="text" placeholder="Type a message…" id="msg-input" style="flex:1" />
-      <button class="search-btn" onclick="sendMessage()"><i class="ti ti-send"></i></button>
-    </div>
-  </div>
 
   <!-- account tab -->
   <div id="tab-account" style="display:none">
@@ -670,7 +658,7 @@ function switchTab(tab) {
   });
   if (tab === 'mylist') { renderMyListings(); renderIncoming(); renderOutgoing(); }
   if (tab === 'myrent') renderMyRent();
-  if (tab === 'chat') renderOutgoing();
+  if (tab === 'chat') { renderOutgoing(); unreadMessages = 0; showChatDot(false); }
   if (tab === 'account') renderAccount();
 }
 
@@ -973,10 +961,13 @@ async function openThread(receiverId, receiverName, subject, reqId) {
   threadReceiverId = receiverId;
   threadRequestId = reqId;
   document.getElementById('thread-title').textContent = `${receiverName} · ${subject}`;
+  document.getElementById('thread-messages').innerHTML = '';
   document.getElementById('screen-thread').style.display = 'flex';
-  document.getElementById('screen-home').style.display = 'none';
   await loadMessages();
-  document.getElementById('msg-input').addEventListener('keyup', e => { if (e.key === 'Enter') sendMessage(); });
+  const inp = document.getElementById('msg-input');
+  inp.onkeyup = e => { if (e.key === 'Enter') sendMessage(); };
+  inp.focus();
+  clearInterval(threadInterval);
   threadInterval = setInterval(loadMessages, 4000);
 }
 
@@ -984,7 +975,6 @@ function closeThread() {
   clearInterval(threadInterval);
   threadInterval = null;
   document.getElementById('screen-thread').style.display = 'none';
-  document.getElementById('screen-home').style.display = 'block';
 }
 
 async function loadMessages() {
@@ -1122,19 +1112,42 @@ async function sendPhoto(input) {
 }
 
 /* ── realtime ── */
+let unreadMessages = 0;
+
+function showChatDot(show) {
+  document.getElementById('chat-dot').style.display = show ? 'block' : 'none';
+}
+
 function startRealtime() {
+  // requests changes
   sb.channel('requests-changes')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests' }, payload => {
       const r = payload.new;
-      // if I'm the borrower and request just got accepted → refresh My Rent
       if (r.borrower_id === currentUser.id && r.status === 'accepted') {
         const activeTab = document.querySelector('.tab.active')?.id;
         if (activeTab === 'tab-btn-myrent') renderMyRent();
         else showToast('toast-home', `✅ Your request for "${r.instrument_name}" was accepted!`);
       }
-      // if I'm on chat tab → refresh
       const activeTab = document.querySelector('.tab.active')?.id;
-      if (activeTab === 'tab-btn-chat') renderChat();
+      if (activeTab === 'tab-btn-mylist') { renderIncoming(); renderOutgoing(); }
+    })
+    .subscribe();
+
+  // new messages → red dot + auto-refresh thread if open
+  sb.channel('messages-changes')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages',
+      filter: `receiver_id=eq.${currentUser.id}` }, payload => {
+      const m = payload.new;
+      const threadOpen = document.getElementById('screen-thread').style.display === 'flex';
+      if (threadOpen && m.sender_id === threadReceiverId) {
+        // thread is open with this person → just refresh messages
+        loadMessages();
+      } else {
+        // thread not open → show red dot
+        unreadMessages++;
+        showChatDot(true);
+        showToast('toast-home', `💬 New message from ${m.sender_name}`);
+      }
     })
     .subscribe();
 }
@@ -1147,5 +1160,21 @@ window.addEventListener('popstate', () => {
 /* ── start ── */
 init().then(() => { loadMemberCount(); startRealtime(); });
 </script>
+<!-- ═══════ CHAT THREAD ═══════ -->
+<div id="screen-thread" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:200;flex-direction:column;max-width:680px;left:50%;transform:translateX(-50%)">
+  <div class="back-header">
+    <button class="back-btn" onclick="closeThread()"><i class="ti ti-arrow-left"></i></button>
+    <div class="back-title" id="thread-title">Chat</div>
+  </div>
+  <div id="thread-messages" style="flex:1;overflow-y:auto;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:10px;padding-bottom:80px"></div>
+  <div style="position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-top:0.5px solid var(--border);padding:10px 1.25rem;display:flex;gap:8px;align-items:center">
+    <label style="cursor:pointer;color:var(--muted);font-size:22px;line-height:1;padding:4px" title="Send photo">
+      <i class="ti ti-camera"></i>
+      <input type="file" accept="image/*" capture="environment" id="photo-input" style="display:none" onchange="sendPhoto(this)" />
+    </label>
+    <input class="form-input" type="text" placeholder="Type a message…" id="msg-input" style="flex:1" />
+    <button class="search-btn" onclick="sendMessage()"><i class="ti ti-send"></i></button>
+  </div>
+</div>
 </body>
 </html>
