@@ -278,7 +278,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.36</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.38</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -1025,6 +1025,7 @@ async function respondRequest(reqId, listingId, status, borrowerId) {
 let threadReceiverId = null;
 let threadRequestId = null;
 let threadInterval = null;
+let threadReceiverAvatar = null;
 const threadMap = {}; // key → {receiverId, receiverName, subject, reqId}
 
 function storeThread(key, receiverId, receiverName, subject, reqId) {
@@ -1040,7 +1041,13 @@ function openThreadByKey(key) {
 async function openThread(receiverId, receiverName, subject, reqId) {
   threadReceiverId = receiverId || null;
   threadRequestId = (reqId && reqId !== 'null' && reqId !== '') ? reqId : null;
-  document.getElementById('thread-title').textContent = `${receiverName} · ${subject}`;
+  threadReceiverAvatar = null;
+  // fetch receiver's avatar
+  if (threadReceiverId) {
+    const { data: rp } = await sb.from('profiles').select('avatar_url,name').eq('id', threadReceiverId).single();
+    threadReceiverAvatar = rp?.avatar_url || null;
+  }
+  document.getElementById('thread-title').textContent = `${receiverName}${subject ? ' · ' + subject : ''}`;
   document.getElementById('thread-messages').innerHTML = '';
   document.getElementById('screen-thread').style.display = 'flex';
   await loadMessages();
@@ -1068,6 +1075,9 @@ async function loadMessages() {
     wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
     return;
   }
+  const myAvatar = currentProfile?.avatar_url || '';
+  const myName = currentProfile?.name || currentUser.email.split('@')[0];
+
   wrap.innerHTML = data.map(m => {
     const mine = m.sender_id === currentUser.id;
     const time = new Date(m.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
@@ -1075,10 +1085,17 @@ async function loadMessages() {
     const bubbleContent = isPhoto
       ? `<img src="${m.content.replace('📷 [Photo]\n','')}" style="max-width:200px;border-radius:8px;display:block" />`
       : m.content;
-    return `<div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'}">
-      ${!mine ? `<div class="msg-name">${m.sender_name}</div>` : ''}
-      <div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">${bubbleContent}</div>
-      <div class="msg-time">${time}</div>
+    const avatarUrl = mine ? myAvatar : threadReceiverAvatar;
+    const avatarLetter = mine ? myName[0].toUpperCase() : m.sender_name[0].toUpperCase();
+    const avatarEl = avatarUrl
+      ? `<img src="${avatarUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
+      : `<div style="width:28px;height:28px;border-radius:50%;background:var(--t400);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">${avatarLetter}</div>`;
+    return `<div style="display:flex;align-items:flex-end;gap:8px;flex-direction:${mine ? 'row-reverse' : 'row'}">
+      ${avatarEl}
+      <div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'}">
+        <div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">${bubbleContent}</div>
+        <div class="msg-time">${time}</div>
+      </div>
     </div>`;
   }).join('');
   wrap.scrollTop = wrap.scrollHeight;
@@ -1286,7 +1303,7 @@ window.addEventListener('popstate', () => {
 init().then(() => { loadMemberCount(); startRealtime(); });
 </script>
 <!-- ═══════ CHAT THREAD ═══════ -->
-<div id="screen-thread" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:200;flex-direction:column;max-width:680px;left:50%;transform:translateX(-50%)">
+<div id="screen-thread" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:200;flex-direction:column">
   <div class="back-header">
     <button class="back-btn" onclick="closeThread()"><i class="ti ti-arrow-left"></i></button>
     <div class="back-title" id="thread-title">Chat</div>
