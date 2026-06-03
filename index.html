@@ -24,7 +24,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 /* ── nav ── */
 .nav{background:var(--t800);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:10}
-.nav-logo{font-family:'Playfair Display',serif;font-size:18px;color:#fff;font-weight:700}
+.nav-logo{font-family:'Playfair Display',serif;font-size:22px;color:#fff;font-weight:700}
 .nav-logo span{color:var(--t200)}
 .nav-right{display:flex;align-items:center;gap:10px}
 .nav-user{display:flex;align-items:center;gap:8px;color:#fff;font-size:13px}
@@ -66,12 +66,13 @@ textarea.form-input{resize:vertical;min-height:80px}
 /* ── home hero ── */
 .home-hero{background:var(--t800);padding:1.5rem 1.25rem 1.25rem;position:relative;overflow:hidden}
 .home-hero::after{content:'♩ ♫ ♬';position:absolute;top:12px;right:16px;font-size:18px;color:rgba(255,255,255,0.12);letter-spacing:8px}
-.school-tag{display:inline-block;background:rgba(255,255,255,0.18);color:rgba(255,255,255,0.88);font-size:10px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:20px;margin-bottom:10px}
-.hero-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:6px}
+.school-tag{display:inline-block;background:rgba(255,255,255,0.18);color:rgba(255,255,255,0.88);font-size:12px;font-weight:500;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:12px}
+.hero-title{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:8px}
 .hero-sub{color:rgba(255,255,255,0.65);font-size:13px;line-height:1.5;max-width:320px}
 .hero-stats{display:flex;gap:24px;margin-top:16px}
 .hs-num{font-size:20px;font-weight:700;color:#fff;font-family:'Playfair Display',serif}
 .hs-lbl{font-size:10px;color:rgba(255,255,255,0.55);margin-top:1px}
+.hero-deco{position:absolute;right:0;top:0;bottom:0;width:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;opacity:0.08;font-size:40px}
 
 /* ── tabs ── */
 .tabs{display:flex;background:var(--surface);border-top:0.5px solid var(--border);position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:680px;z-index:9}
@@ -277,7 +278,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.22</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.25</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar">A</div>
@@ -289,13 +290,13 @@ textarea.form-input{resize:vertical;min-height:80px}
 
   <div class="home-hero">
     <div class="school-tag">Nexus International School</div>
-    <div class="hero-title">Find an Instrument<br>Lend to a Classmate</div>
-    <div class="hero-sub">Students helping students — save money and share the music</div>
+    <div class="hero-title">Share Your Instrument<br>with Your Classmate</div>
+    <div class="hero-sub">Students helping students — borrow, lend, and make music together</div>
     <div class="hero-stats">
       <div><div class="hs-num" id="stat-avail">—</div><div class="hs-lbl">Available</div></div>
       <div><div class="hs-num" id="stat-users">—</div><div class="hs-lbl">Members</div></div>
-      <div><div class="hs-num">$5~</div><div class="hs-lbl">From / week</div></div>
     </div>
+    <div class="hero-deco">🎻🎹🎺🥁🪈</div>
   </div>
 
   <div class="tab-content-wrap">
@@ -343,30 +344,28 @@ textarea.form-input{resize:vertical;min-height:80px}
 
   <!-- my listings tab -->
   <div id="tab-mylist" style="display:none">
-    <div class="sec-header">
-      <i class="ti ti-music"></i> Instruments I'm Lending
-    </div>
+    <div class="sec-header"><i class="ti ti-music"></i> Instruments I'm Lending</div>
     <div class="my-listings" id="my-listings-wrap"></div>
-    <div class="fab">
+    <div class="fab" style="padding-bottom:0">
       <button class="fab-btn" onclick="openOverlay('ov-post')">
         <i class="ti ti-plus"></i> Add Another Listing
       </button>
     </div>
+    <div class="sec-header" style="margin-top:16px"><i class="ti ti-inbox"></i> Incoming Requests</div>
+    <div class="my-listings" id="chat-incoming"></div>
+    <div class="sec-header" style="margin-top:4px"><i class="ti ti-send"></i> My Requests</div>
+    <div class="my-listings" id="chat-outgoing"></div>
   </div>
 
-  <!-- my rent tab -->
   <!-- my rent tab -->
   <div id="tab-myrent" style="display:none">
     <div class="sec-header"><i class="ti ti-calendar"></i> Instruments I'm Renting</div>
     <div class="my-listings" id="my-rent-wrap"></div>
   </div>
 
-  <!-- chat tab: conversation list -->
+  <!-- chat tab (messages only) -->
   <div id="tab-chat" style="display:none">
-    <div class="sec-header"><i class="ti ti-inbox"></i> Incoming Requests</div>
-    <div class="my-listings" id="chat-incoming"></div>
-    <div class="sec-header" style="margin-top:4px"><i class="ti ti-send"></i> My Requests</div>
-    <div class="my-listings" id="chat-outgoing"></div>
+    <div class="empty-state"><i class="ti ti-message"></i>Open a request to start messaging</div>
   </div>
 
   <!-- chat thread screen -->
@@ -376,7 +375,11 @@ textarea.form-input{resize:vertical;min-height:80px}
       <div class="back-title" id="thread-title">Chat</div>
     </div>
     <div id="thread-messages" style="flex:1;overflow-y:auto;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:10px;padding-bottom:80px"></div>
-    <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:680px;background:var(--surface);border-top:0.5px solid var(--border);padding:10px 1.25rem;display:flex;gap:8px">
+    <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:680px;background:var(--surface);border-top:0.5px solid var(--border);padding:10px 1.25rem;display:flex;gap:8px;align-items:center">
+      <label style="cursor:pointer;color:var(--muted);font-size:22px;line-height:1;padding:4px" title="Send photo">
+        <i class="ti ti-camera"></i>
+        <input type="file" accept="image/*" capture="environment" id="photo-input" style="display:none" onchange="sendPhoto(this)" />
+      </label>
       <input class="form-input" type="text" placeholder="Type a message…" id="msg-input" style="flex:1" />
       <button class="search-btn" onclick="sendMessage()"><i class="ti ti-send"></i></button>
     </div>
@@ -384,25 +387,36 @@ textarea.form-input{resize:vertical;min-height:80px}
 
   <!-- account tab -->
   <div id="tab-account" style="display:none">
-    <div class="sec-header"><i class="ti ti-user-circle"></i> My Account</div>
-    <div style="padding:0 1.25rem">
-      <div class="listing-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px">Name</div>
-        <div style="font-size:15px;font-weight:500" id="acc-name">—</div>
+    <!-- profile card -->
+    <div style="background:var(--t800);padding:1.5rem 1.25rem 1.25rem">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--t400);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;font-family:'Playfair Display',serif" id="acc-avatar">A</div>
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#fff" id="acc-name">—</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px" id="acc-grade">—</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:1px" id="acc-email">—</div>
+        </div>
       </div>
-      <div class="listing-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px">Email</div>
-        <div style="font-size:15px;font-weight:500" id="acc-email">—</div>
+      <!-- stats -->
+      <div style="display:flex;gap:0;margin-top:1.25rem;background:rgba(255,255,255,0.1);border-radius:12px;overflow:hidden">
+        <div style="flex:1;padding:12px;text-align:center;border-right:0.5px solid rgba(255,255,255,0.15)">
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#fff" id="acc-stat-lent">—</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px">Lent Out</div>
+        </div>
+        <div style="flex:1;padding:12px;text-align:center;border-right:0.5px solid rgba(255,255,255,0.15)">
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#fff" id="acc-stat-borrowed">—</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px">Borrowed</div>
+        </div>
+        <div style="flex:1;padding:12px;text-align:center">
+          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#fff" id="acc-stat-listings">—</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px">Listings</div>
+        </div>
       </div>
-      <div class="listing-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px">Year Group</div>
-        <div style="font-size:15px;font-weight:500" id="acc-grade">—</div>
-      </div>
-      <div class="fab" style="padding:1rem 0 1.5rem">
-        <button class="fab-btn" style="background:var(--c600)" onclick="doLogout()">
-          <i class="ti ti-logout"></i> Sign Out
-        </button>
-      </div>
+    </div>
+    <div style="padding:1rem 1.25rem 0">
+      <button class="fab-btn" style="background:var(--c600)" onclick="doLogout()">
+        <i class="ti ti-logout"></i> Sign Out
+      </button>
     </div>
   </div>
 
@@ -627,6 +641,7 @@ async function enterHome() {
   const name = currentProfile?.name || currentUser.email.split('@')[0];
   document.getElementById('home-avatar').textContent = name[0].toUpperCase();
   document.getElementById('home-uname').textContent = name;
+  history.replaceState(null, '', window.location.pathname);
   showScreen('screen-home');
   await loadListings();
   renderBrowse();
@@ -653,14 +668,10 @@ function switchTab(tab) {
     document.getElementById(`tab-btn-${t}`).classList.toggle('active', tab === t);
     document.getElementById(`tab-${t}`).style.display = tab === t ? 'block' : 'none';
   });
-  if (tab === 'mylist') renderMyListings();
+  if (tab === 'mylist') { renderMyListings(); renderIncoming(); renderOutgoing(); }
   if (tab === 'myrent') renderMyRent();
-  if (tab === 'chat') renderChat();
-  if (tab === 'account') {
-    document.getElementById('acc-name').textContent = currentProfile?.name || '—';
-    document.getElementById('acc-email').textContent = currentUser?.email || '—';
-    document.getElementById('acc-grade').textContent = currentProfile?.grade || '—';
-  }
+  if (tab === 'chat') renderOutgoing();
+  if (tab === 'account') renderAccount();
 }
 
 /* ── browse ── */
@@ -711,25 +722,37 @@ function renderBrowse() {
 }
 
 /* ── my listings ── */
-function renderMyListings() {
+async function renderMyListings() {
   const mine = allListings.filter(l => l.user_id === currentUser.id);
   const wrap = document.getElementById('my-listings-wrap');
   if (!mine.length) {
     wrap.innerHTML = '<div class="empty-state"><i class="ti ti-mood-empty"></i>No listings yet<br>Tap the button below to post your first instrument</div>';
     return;
   }
-  wrap.innerHTML = mine.map(item => `
+  // fetch active loans to show who borrowed each instrument
+  const { data: activeReqs } = await sb.from('requests').select('listing_id, borrower_name, borrower_email, start_date, end_date').eq('owner_id', currentUser.id).eq('status','accepted');
+  const loanMap = {};
+  (activeReqs || []).forEach(r => { loanMap[r.listing_id] = r; });
+
+  wrap.innerHTML = mine.map(item => {
+    const loan = loanMap[item.id];
+    const status = item.status || (item.available ? 'available' : 'on_loan');
+    const metaLine = status === 'on_loan' && loan
+      ? `<span style="color:var(--a400)">On loan to ${loan.borrower_name} · ${loan.start_date} → ${loan.end_date}</span>`
+      : `$${item.price}/wk · ${item.cat}${item.brand ? ' · '+item.brand : ''}${item.condition ? ' · '+item.condition : ''}`;
+    return `
     <div class="listing-row">
       <div class="listing-icon">${EMOJIS[item.cat] || '🎵'}</div>
       <div class="listing-info">
         <div class="listing-name">${item.name}</div>
-        <div class="listing-meta">$${item.price}/wk · ${item.cat} · ${item.contact}</div>
+        <div class="listing-meta">${metaLine}</div>
       </div>
       <button class="badge ${statusBadgeClass(item)}" onclick="openAvailabilityModal('${item.id}')" style="border:none;cursor:pointer" title="Change availability">${statusLabel(item)}</button>
       <button class="listing-del" onclick="deleteListing('${item.id}')" title="Remove listing">
         <i class="ti ti-trash"></i>
       </button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 async function deleteListing(id) {
@@ -761,9 +784,16 @@ async function setAvailability(id, status) {
 function openAvailabilityModal(id) {
   const item = allListings.find(l => l.id === id);
   if (!item) return;
-  document.getElementById('av-title').textContent = item.name;
   const current = item.status || (item.available ? 'available' : 'on_loan');
+  if (current === 'on_loan') {
+    showToast('toast-home', 'This instrument is currently on loan — return it first before changing status', true);
+    return;
+  }
+  document.getElementById('av-title').textContent = item.name;
   document.querySelectorAll('.av-option').forEach(btn => {
+    // hide on_loan option — status is set automatically when request is accepted
+    if (btn.dataset.val === 'on_loan') { btn.style.display = 'none'; return; }
+    btn.style.display = 'flex';
     btn.classList.toggle('av-active', btn.dataset.val === current);
     btn.onclick = () => setAvailability(id, btn.dataset.val);
   });
@@ -881,47 +911,42 @@ async function renderMyRent() {
 }
 
 /* ── chat / requests ── */
-async function renderChat() {
-  const { data } = await sb.from('requests').select('*').order('created_at', { ascending: false });
-  const incoming = (data || []).filter(r => r.owner_id === currentUser.id);
-  const outgoing = (data || []).filter(r => r.borrower_id === currentUser.id);
-  const inWrap = document.getElementById('chat-incoming');
-  const outWrap = document.getElementById('chat-outgoing');
-
-  inWrap.innerHTML = incoming.length ? incoming.map(r => `
-    <div class="req-card">
-      <div class="req-top">
-        <div class="req-name">${r.instrument_name}</div>
-        <div class="badge badge-${r.status}">${r.status.charAt(0).toUpperCase()+r.status.slice(1)}</div>
-      </div>
-      <div class="req-meta">From: ${r.borrower_name} (${r.borrower_email})<br>${r.start_date} → ${r.end_date} · ${r.fee}</div>
-      ${r.status === 'pending' ? `
-      <div class="req-actions">
-        <button class="req-accept" onclick="respondRequest('${r.id}','${r.listing_id}','accepted','${r.borrower_id}')">Accept</button>
-        <button class="req-decline" onclick="respondRequest('${r.id}','${r.listing_id}','declined','${r.borrower_id}')">Decline</button>
-      </div>` : `
-      <div style="margin-top:8px">
-        <button class="req-accept" style="width:auto;padding:7px 16px;font-size:12px" onclick="openThread('${r.borrower_id}','${r.borrower_name}','${r.instrument_name}','${r.id}')">
-          <i class="ti ti-message"></i> Message
-        </button>
-      </div>`}
-    </div>`).join('') : '<div class="empty-state"><i class="ti ti-inbox"></i>No incoming requests</div>';
-
-  outWrap.innerHTML = outgoing.length ? outgoing.map(r => `
-    <div class="req-card">
-      <div class="req-top">
-        <div class="req-name">${r.instrument_name}</div>
-        <div class="badge badge-${r.status}">${r.status.charAt(0).toUpperCase()+r.status.slice(1)}</div>
-      </div>
-      <div class="req-meta">${r.start_date} → ${r.end_date} · ${r.fee}</div>
-      ${r.status !== 'pending' ? `
-      <div style="margin-top:8px">
-        <button class="req-accept" style="width:auto;padding:7px 16px;font-size:12px" onclick="openThread('${r.owner_id}','Owner','${r.instrument_name}','${r.id}')">
-          <i class="ti ti-message"></i> Message
-        </button>
-      </div>` : ''}
-    </div>`).join('') : '<div class="empty-state"><i class="ti ti-send"></i>No outgoing requests</div>';
+function reqCard(r, isIncoming) {
+  const statusLabel = r.status.charAt(0).toUpperCase() + r.status.slice(1);
+  return `<div class="req-card">
+    <div class="req-top">
+      <div class="req-name">${r.instrument_name}</div>
+      <div class="badge badge-${r.status}">${statusLabel}</div>
+    </div>
+    <div class="req-meta">${isIncoming ? `From: ${r.borrower_name} (${r.borrower_email})<br>` : ''}${r.start_date} → ${r.end_date} · ${r.fee}</div>
+    ${isIncoming && r.status === 'pending' ? `
+    <div class="req-actions">
+      <button class="req-accept" onclick="respondRequest('${r.id}','${r.listing_id}','accepted','${r.borrower_id}')">Accept</button>
+      <button class="req-decline" onclick="respondRequest('${r.id}','${r.listing_id}','declined','${r.borrower_id}')">Decline</button>
+    </div>` : r.status !== 'pending' ? `
+    <div style="margin-top:8px">
+      <button class="req-accept" style="width:auto;padding:7px 16px;font-size:12px" onclick="openThread('${isIncoming ? r.borrower_id : r.owner_id}','${isIncoming ? r.borrower_name : 'Owner'}','${r.instrument_name}','${r.id}')">
+        <i class="ti ti-message"></i> Message
+      </button>
+    </div>` : ''}
+  </div>`;
 }
+
+async function renderIncoming() {
+  const { data } = await sb.from('requests').select('*').eq('owner_id', currentUser.id).order('created_at', { ascending: false });
+  const wrap = document.getElementById('chat-incoming');
+  if (!wrap) return;
+  wrap.innerHTML = (data && data.length) ? data.map(r => reqCard(r, true)).join('') : '<div class="empty-state"><i class="ti ti-inbox"></i>No incoming requests</div>';
+}
+
+async function renderOutgoing() {
+  const { data } = await sb.from('requests').select('*').eq('borrower_id', currentUser.id).order('created_at', { ascending: false });
+  const wrap = document.getElementById('chat-outgoing');
+  if (!wrap) return;
+  wrap.innerHTML = (data && data.length) ? data.map(r => reqCard(r, false)).join('') : '<div class="empty-state"><i class="ti ti-send"></i>No outgoing requests</div>';
+}
+
+async function renderChat() { await renderIncoming(); await renderOutgoing(); }
 
 async function respondRequest(reqId, listingId, status, borrowerId) {
   const { error } = await sb.from('requests').update({ status }).eq('id', reqId);
@@ -974,9 +999,13 @@ async function loadMessages() {
   wrap.innerHTML = data.map(m => {
     const mine = m.sender_id === currentUser.id;
     const time = new Date(m.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    const isPhoto = m.content.startsWith('📷 [Photo]\n');
+    const bubbleContent = isPhoto
+      ? `<img src="${m.content.replace('📷 [Photo]\n','')}" style="max-width:200px;border-radius:8px;display:block" />`
+      : m.content;
     return `<div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'}">
       ${!mine ? `<div class="msg-name">${m.sender_name}</div>` : ''}
-      <div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">${m.content}</div>
+      <div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">${bubbleContent}</div>
       <div class="msg-time">${time}</div>
     </div>`;
   }).join('');
@@ -1062,6 +1091,36 @@ const style = document.createElement('style');
 style.textContent = '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
 document.head.appendChild(style);
 
+/* ── account ── */
+async function renderAccount() {
+  const name = currentProfile?.name || currentUser.email.split('@')[0];
+  document.getElementById('acc-name').textContent = name;
+  document.getElementById('acc-avatar').textContent = name[0].toUpperCase();
+  document.getElementById('acc-email').textContent = currentUser?.email || '—';
+  document.getElementById('acc-grade').textContent = currentProfile?.grade || '—';
+  // stats
+  const { count: lentCount } = await sb.from('requests').select('*', { count:'exact', head:true }).eq('owner_id', currentUser.id).eq('status','accepted');
+  const { count: borrowedCount } = await sb.from('requests').select('*', { count:'exact', head:true }).eq('borrower_id', currentUser.id).eq('status','accepted');
+  const { count: listingsCount } = await sb.from('listings').select('*', { count:'exact', head:true }).eq('user_id', currentUser.id);
+  document.getElementById('acc-stat-lent').textContent = lentCount ?? 0;
+  document.getElementById('acc-stat-borrowed').textContent = borrowedCount ?? 0;
+  document.getElementById('acc-stat-listings').textContent = listingsCount ?? 0;
+}
+
+/* ── photo in chat ── */
+async function sendPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const myName = currentProfile?.name || currentUser.email.split('@')[0];
+    const content = `📷 [Photo]\n${e.target.result}`;
+    await sb.from('messages').insert({ sender_id: currentUser.id, receiver_id: threadReceiverId, sender_name: myName, content, request_id: threadRequestId });
+    await loadMessages();
+  };
+  reader.readAsDataURL(file);
+}
+
 /* ── realtime ── */
 function startRealtime() {
   sb.channel('requests-changes')
@@ -1079,6 +1138,11 @@ function startRealtime() {
     })
     .subscribe();
 }
+
+/* ── block back button ── */
+window.addEventListener('popstate', () => {
+  if (currentUser) history.pushState(null, '', window.location.pathname);
+});
 
 /* ── start ── */
 init().then(() => { loadMemberCount(); startRealtime(); });
