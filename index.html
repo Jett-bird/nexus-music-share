@@ -278,7 +278,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.32</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.34</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar">A</div>
@@ -307,14 +307,14 @@ textarea.form-input{resize:vertical;min-height:80px}
     <div class="tab" id="tab-btn-mylist" onclick="switchTab('mylist')">
       <i class="ti ti-music"></i>My Listings
     </div>
-    <div class="tab" id="tab-btn-myrent" onclick="switchTab('myrent')">
-      <i class="ti ti-calendar"></i>My Rent
-    </div>
     <div class="tab" id="tab-btn-chat" onclick="switchTab('chat')">
       <div style="position:relative;display:inline-block">
         <i class="ti ti-message"></i>
         <span id="chat-dot" style="display:none;position:absolute;top:-2px;right:-4px;width:8px;height:8px;background:#e53e3e;border-radius:50%;border:1.5px solid var(--surface)"></span>
       </div>Chat
+    </div>
+    <div class="tab" id="tab-btn-apply" onclick="switchTab('apply')">
+      <i class="ti ti-file-description"></i>Requests
     </div>
     <div class="tab" id="tab-btn-account" onclick="switchTab('account')">
       <i class="ti ti-user-circle"></i>Account
@@ -354,16 +354,6 @@ textarea.form-input{resize:vertical;min-height:80px}
         <i class="ti ti-plus"></i> Add Another Listing
       </button>
     </div>
-    <div class="sec-header" style="margin-top:16px"><i class="ti ti-inbox"></i> Incoming Requests</div>
-    <div class="my-listings" id="chat-incoming"></div>
-    <div class="sec-header" style="margin-top:4px"><i class="ti ti-send"></i> My Requests</div>
-    <div class="my-listings" id="chat-outgoing"></div>
-  </div>
-
-  <!-- my rent tab -->
-  <div id="tab-myrent" style="display:none">
-    <div class="sec-header"><i class="ti ti-calendar"></i> Instruments I'm Renting</div>
-    <div class="my-listings" id="my-rent-wrap"></div>
   </div>
 
   <!-- chat tab -->
@@ -373,6 +363,14 @@ textarea.form-input{resize:vertical;min-height:80px}
   </div>
 
   <!-- chat thread screen -->
+
+  <!-- apply tab -->
+  <div id="tab-apply" style="display:none">
+    <div class="sec-header"><i class="ti ti-inbox"></i> Incoming Requests</div>
+    <div class="my-listings" id="chat-incoming"></div>
+    <div class="sec-header" style="margin-top:4px"><i class="ti ti-send"></i> My Requests</div>
+    <div class="my-listings" id="chat-outgoing"></div>
+  </div>
 
   <!-- account tab -->
   <div id="tab-account" style="display:none">
@@ -653,12 +651,12 @@ async function loadMemberCount() {
 
 /* ── tabs ── */
 function switchTab(tab) {
-  ['browse','mylist','myrent','chat','account'].forEach(t => {
+  ['browse','mylist','chat','apply','account'].forEach(t => {
     document.getElementById(`tab-btn-${t}`).classList.toggle('active', tab === t);
     document.getElementById(`tab-${t}`).style.display = tab === t ? 'block' : 'none';
   });
-  if (tab === 'mylist') { renderMyListings(); renderIncoming(); renderOutgoing(); }
-  if (tab === 'myrent') renderMyRent();
+  if (tab === 'mylist') renderMyListings();
+  if (tab === 'apply') { renderIncoming(); renderOutgoing(); }
   if (tab === 'chat') { renderConversations(); renderOutgoing(); unreadMessages = 0; showChatDot(false); }
   if (tab === 'account') renderAccount();
 }
