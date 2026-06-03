@@ -278,10 +278,10 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.34</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.36</span></div>
     <div class="nav-right">
       <div class="nav-user">
-        <div class="avatar" id="home-avatar">A</div>
+        <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
         <span id="home-uname" style="font-size:12px;color:#fff">User</span>
       </div>
       <button class="nav-btn" onclick="doLogout()">Sign Out</button>
@@ -377,7 +377,13 @@ textarea.form-input{resize:vertical;min-height:80px}
     <!-- profile card -->
     <div style="background:var(--t800);padding:1.5rem 1.25rem 1.25rem">
       <div style="display:flex;align-items:center;gap:14px">
-        <div style="width:56px;height:56px;border-radius:50%;background:var(--t400);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;font-family:'Playfair Display',serif" id="acc-avatar">A</div>
+        <label style="cursor:pointer;position:relative" title="Change photo">
+          <div style="width:56px;height:56px;border-radius:50%;background:var(--t400);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;font-family:'Playfair Display',serif;overflow:hidden;position:relative" id="acc-avatar">A</div>
+          <div style="position:absolute;bottom:0;right:0;background:var(--t600);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center">
+            <i class="ti ti-camera" style="font-size:10px;color:#fff"></i>
+          </div>
+          <input type="file" accept="image/*" id="avatar-input" style="display:none" onchange="uploadAvatar(this)" />
+        </label>
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#fff" id="acc-name">—</div>
           <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px" id="acc-grade">—</div>
@@ -626,8 +632,8 @@ async function doLogout() {
 /* ── home ── */
 async function enterHome() {
   const name = currentProfile?.name || currentUser.email.split('@')[0];
-  document.getElementById('home-avatar').textContent = name[0].toUpperCase();
   document.getElementById('home-uname').textContent = name;
+  applyAvatars();
   history.replaceState(null, '', window.location.pathname);
   showScreen('screen-home');
   await loadListings();
@@ -964,7 +970,9 @@ async function renderConversations() {
     const info = nameMap[c.otherId] || { name: c.otherName, subject: '', reqId: c.reqId };
     const preview = c.lastMsg.startsWith('📷') ? '📷 Photo' : c.lastMsg.slice(0, 40) + (c.lastMsg.length > 40 ? '…' : '');
     const time = new Date(c.time).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-    return `<div class="listing-row" style="cursor:pointer" onclick="openThread('${c.otherId}','${info.name}','${info.subject}','${info.reqId || ''}')">
+    const key = `conv-${c.otherId}`;
+    threadMap[key] = { receiverId: c.otherId, receiverName: info.name, subject: info.subject, reqId: info.reqId || null };
+    return `<div class="listing-row" style="cursor:pointer" onclick="openThreadByKey('${key}')">
       <div class="listing-icon" style="background:var(--t50);font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--t600)">${info.name[0].toUpperCase()}</div>
       <div class="listing-info">
         <div class="listing-name">${info.name}${info.subject ? ' · ' + info.subject : ''}</div>
@@ -1021,6 +1029,12 @@ const threadMap = {}; // key → {receiverId, receiverName, subject, reqId}
 
 function storeThread(key, receiverId, receiverName, subject, reqId) {
   threadMap[key] = { receiverId, receiverName, subject, reqId };
+}
+
+function openThreadByKey(key) {
+  const t = threadMap[key];
+  if (!t) return;
+  openThread(t.receiverId, t.receiverName, t.subject, t.reqId);
 }
 
 async function openThread(receiverId, receiverName, subject, reqId) {
@@ -1156,11 +1170,41 @@ const style = document.createElement('style');
 style.textContent = '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
 document.head.appendChild(style);
 
+/* ── avatar helper ── */
+function setAvatarEl(el, name, url) {
+  if (url) {
+    el.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover" />`;
+  } else {
+    el.textContent = name[0].toUpperCase();
+  }
+}
+
+async function uploadAvatar(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop();
+  const path = `${currentUser.id}.${ext}`;
+  const { error: upErr } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
+  if (upErr) { showToast('toast-home', 'Upload failed: ' + upErr.message, true); return; }
+  const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(path);
+  await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
+  if (currentProfile) currentProfile.avatar_url = publicUrl;
+  applyAvatars();
+  showToast('toast-home', 'Profile photo updated!');
+}
+
+function applyAvatars() {
+  const name = currentProfile?.name || currentUser.email.split('@')[0];
+  const url = currentProfile?.avatar_url || '';
+  setAvatarEl(document.getElementById('home-avatar'), name, url);
+  setAvatarEl(document.getElementById('acc-avatar'), name, url);
+}
+
 /* ── account ── */
 async function renderAccount() {
   const name = currentProfile?.name || currentUser.email.split('@')[0];
   document.getElementById('acc-name').textContent = name;
-  document.getElementById('acc-avatar').textContent = name[0].toUpperCase();
+  applyAvatars();
   document.getElementById('acc-email').textContent = currentUser?.email || '—';
   document.getElementById('acc-grade').textContent = currentProfile?.grade || '—';
   // stats
