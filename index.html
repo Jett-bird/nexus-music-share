@@ -278,7 +278,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.46</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.47</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -1026,6 +1026,7 @@ let threadReceiverId = null;
 let threadRequestId = null;
 let threadInterval = null;
 let threadReceiverAvatar = null;
+let isSending = false;
 const threadMap = {}; // key → {receiverId, receiverName, subject, reqId}
 
 function storeThread(key, receiverId, receiverName, subject, reqId) {
@@ -1060,7 +1061,7 @@ async function openThread(receiverId, receiverName, subject, reqId) {
   inp.onkeyup = e => { if (e.key === 'Enter') sendMessage(); };
   inp.focus();
   clearInterval(threadInterval);
-  threadInterval = setInterval(loadMessages, 4000);
+  threadInterval = setInterval(() => { if (!isSending) loadMessages(); }, 4000);
 }
 
 function closeThread() {
@@ -1109,17 +1110,24 @@ async function loadMessages() {
 async function sendMessage() {
   const input = document.getElementById('msg-input');
   const content = input.value.trim();
-  if (!content) return;
+  if (!content || !threadReceiverId) return;
   const myName = currentProfile?.name || currentUser.email.split('@')[0];
   input.value = '';
-  const { error } = await sb.from('messages').insert({
+  input.focus();
+  const payload = {
     sender_id: currentUser.id,
     receiver_id: threadReceiverId,
     sender_name: myName,
-    content,
-    request_id: threadRequestId || null
-  });
-  if (error) { showToast('toast-home', 'Could not send: ' + error.message, true); input.value = content; return; }
+    content
+  };
+  // only include request_id if it's a valid non-empty value
+  if (threadRequestId && threadRequestId !== 'null' && threadRequestId !== '') {
+    payload.request_id = threadRequestId;
+  }
+  isSending = true;
+  const { error } = await sb.from('messages').insert(payload);
+  isSending = false;
+  if (error) { showToast('toast-home', 'Error: ' + error.message, true); input.value = content; return; }
   await loadMessages();
 }
 
