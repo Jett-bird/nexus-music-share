@@ -315,7 +315,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.51</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.53</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -589,7 +589,9 @@ let selStart = null, selEnd = null;
 async function init() {
   // listen for auth changes (handles OAuth redirects + token refresh)
   sb.auth.onAuthStateChange(async (event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session && !currentUser) {
+    // only handle Google OAuth redirect (not email/password login)
+    const isOAuth = session?.user?.app_metadata?.provider === 'google';
+    if (event === 'SIGNED_IN' && session && !currentUser && isOAuth) {
       currentUser = session.user;
       await loadProfile();
       if (!currentProfile) {
@@ -657,10 +659,12 @@ async function doLogin() {
   const pw    = document.getElementById('login-pw').value;
   if (!email || !pw) { showToast('toast-login', 'Please enter your email and password', true); return; }
   setLoading('login-btn', true);
-  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
   setLoading('login-btn', false);
   if (error) { showToast('toast-login', 'Invalid email or password. Please try again.', true); return; }
-  // onAuthStateChange will handle entering home
+  currentUser = data.user;
+  await loadProfile();
+  await enterHome();
 }
 
 async function doRegister() {
@@ -1279,11 +1283,19 @@ function showToast(id, msg, isError = false) {
 }
 
 /* ── button loading state ── */
+const btnLabels = {
+  'login-btn': 'Sign In <i class="ti ti-arrow-right"></i>',
+  'reg-btn': 'Create Account <i class="ti ti-check"></i>',
+  'cp-btn': 'Get Started <i class="ti ti-arrow-right"></i>',
+  'post-btn': 'Publish Listing <i class="ti ti-arrow-right"></i>'
+};
 function setLoading(btnId, loading) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
   btn.disabled = loading;
-  if (loading) btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>';
+  btn.innerHTML = loading
+    ? '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>'
+    : (btnLabels[btnId] || btn.dataset.label || btn.textContent);
 }
 
 /* ── keyboard ── */
