@@ -275,10 +275,47 @@ textarea.form-input{resize:vertical;min-height:80px}
   <div class="toast-bar"><span class="toast" id="toast-reg"></span></div>
 </div>
 
+<!-- ═══════ COMPLETE PROFILE (Google users) ═══════ -->
+<div id="screen-complete-profile" class="screen">
+  <div class="auth-hero">
+    <div class="auth-logo">Nexus Music <span>Share</span></div>
+    <div class="auth-tagline">Complete your profile to continue</div>
+  </div>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-title">One more step</div>
+      <div class="auth-sub">Signed in as <span id="cp-email" style="color:var(--t600)"></span></div>
+      <div style="display:flex;gap:10px">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">First Name</label>
+          <input class="form-input" type="text" placeholder="First name" id="cp-firstname" />
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Last Name</label>
+          <input class="form-input" type="text" placeholder="Last name" id="cp-lastname" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Year Group</label>
+        <select class="form-input" id="cp-grade">
+          <option value="">Select your year group</option>
+          <option>Year 7</option><option>Year 8</option><option>Year 9</option>
+          <option>Year 10</option><option>Year 11</option><option>Year 12</option>
+          <option>Teacher / Staff</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="cp-btn" onclick="completeProfile()">
+        Get Started <i class="ti ti-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+  <div class="toast-bar"><span class="toast" id="toast-cp"></span></div>
+</div>
+
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.49</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.51</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -550,11 +587,31 @@ let selStart = null, selEnd = null;
 
 /* ── init: check existing session ── */
 async function init() {
+  // listen for auth changes (handles OAuth redirects + token refresh)
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session && !currentUser) {
+      currentUser = session.user;
+      await loadProfile();
+      if (!currentProfile) {
+        showScreen('screen-complete-profile');
+        const em = document.getElementById('cp-email');
+        if (em) em.textContent = currentUser.email;
+      } else {
+        await enterHome();
+      }
+    }
+  });
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
     currentUser = session.user;
     await loadProfile();
-    await enterHome();
+    if (!currentProfile) {
+      showScreen('screen-complete-profile');
+      const em = document.getElementById('cp-email');
+      if (em) em.textContent = currentUser.email;
+    } else {
+      await enterHome();
+    }
   } else {
     showScreen('screen-login');
   }
@@ -573,6 +630,20 @@ function showScreen(id) {
 }
 
 /* ── auth ── */
+async function completeProfile() {
+  const firstName = document.getElementById('cp-firstname').value.trim();
+  const lastName  = document.getElementById('cp-lastname').value.trim();
+  const grade     = document.getElementById('cp-grade').value;
+  if (!firstName || !lastName || !grade) { showToast('toast-cp', 'Please fill in all fields', true); return; }
+  const name = `${firstName} ${lastName}`;
+  setLoading('cp-btn', true);
+  const { error } = await sb.from('profiles').insert({ id: currentUser.id, name, grade });
+  setLoading('cp-btn', false);
+  if (error) { showToast('toast-cp', error.message, true); return; }
+  currentProfile = { name, grade, avatar_url: '' };
+  await enterHome();
+}
+
 async function doGoogleLogin() {
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
@@ -586,12 +657,10 @@ async function doLogin() {
   const pw    = document.getElementById('login-pw').value;
   if (!email || !pw) { showToast('toast-login', 'Please enter your email and password', true); return; }
   setLoading('login-btn', true);
-  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
   setLoading('login-btn', false);
   if (error) { showToast('toast-login', 'Invalid email or password. Please try again.', true); return; }
-  currentUser = data.user;
-  await loadProfile();
-  await enterHome();
+  // onAuthStateChange will handle entering home
 }
 
 async function doRegister() {
@@ -612,9 +681,12 @@ async function doRegister() {
   });
   setLoading('reg-btn', false);
   if (error) { showToast('toast-reg', error.message, true); return; }
-  currentUser = data.user;
-  currentProfile = { name, grade };
-  await enterHome();
+  // profile created by trigger; onAuthStateChange handles the rest
+  if (data.user) {
+    currentUser = data.user;
+    currentProfile = { name, grade };
+    await enterHome();
+  }
 }
 
 async function doLogout() {
@@ -1048,6 +1120,7 @@ async function openThread(receiverId, receiverName, subject, reqId) {
   threadReceiverId = receiverId || null;
   threadRequestId = (reqId && reqId !== 'null' && reqId !== '') ? reqId : null;
   threadReceiverAvatar = null;
+  lastMessageId = null;
   // fetch receiver's avatar
   if (threadReceiverId) {
     const { data: rp } = await sb.from('profiles').select('avatar_url,name').eq('id', threadReceiverId).single();
@@ -1067,7 +1140,7 @@ async function openThread(receiverId, receiverName, subject, reqId) {
       const m = payload.new;
       if ((m.sender_id === currentUser.id && m.receiver_id === threadReceiverId) ||
           (m.sender_id === threadReceiverId && m.receiver_id === currentUser.id)) {
-        loadMessages();
+        loadMessages(true); // append only — fast
       }
     })
     .subscribe();
@@ -1101,18 +1174,27 @@ function renderBubble(m) {
   </div>`;
 }
 
-async function loadMessages() {
+let lastMessageId = null;
+
+async function loadMessages(appendOnly = false) {
   if (!threadReceiverId) return;
-  const { data } = await sb.from('messages').select('*')
+  const wrap = document.getElementById('thread-messages');
+  let query = sb.from('messages').select('*')
     .in('sender_id', [currentUser.id, threadReceiverId])
     .in('receiver_id', [currentUser.id, threadReceiverId])
     .order('created_at', { ascending: true });
-  const wrap = document.getElementById('thread-messages');
+  if (appendOnly && lastMessageId) query = query.gt('id', lastMessageId);
+  const { data } = await query;
   if (!data || !data.length) {
-    wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
+    if (!appendOnly) wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
     return;
   }
-  wrap.innerHTML = data.map(renderBubble).join('');
+  lastMessageId = data[data.length - 1].id;
+  if (appendOnly) {
+    data.forEach(m => wrap.insertAdjacentHTML('beforeend', renderBubble(m)));
+  } else {
+    wrap.innerHTML = data.map(renderBubble).join('');
+  }
   wrap.scrollTop = wrap.scrollHeight;
 }
 
@@ -1140,10 +1222,8 @@ async function sendMessage() {
     showToast('toast-home', 'Error: ' + error.message, true);
     input.value = content;
     document.getElementById(tempId)?.remove();
-    return;
   }
-  // replace temp with real data
-  await loadMessages();
+  // realtime will append the real message; no need to reload
 }
 
 /* ── post listing ── */
