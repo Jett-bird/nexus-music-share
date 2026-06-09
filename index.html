@@ -35,6 +35,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* ── screens ── */
 .screen{display:none}
 .screen.active{display:block}
+.splash-screen.active{display:flex;min-height:100vh;background:var(--t800);align-items:center;justify-content:center;flex-direction:column;gap:16px}
 
 
 /* ── auth ── */
@@ -191,8 +192,14 @@ textarea.form-input{resize:vertical;min-height:80px}
 <body>
 <div class="app">
 
+<!-- ═══════ SPLASH ═══════ -->
+<div id="screen-splash" class="screen active splash-screen">
+  <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff">Nexus Music <span style="color:var(--t200)">Share</span></div>
+  <i class="ti ti-loader-2" style="font-size:24px;color:rgba(255,255,255,0.4);animation:spin 1s linear infinite"></i>
+</div>
+
 <!-- ═══════ LOGIN ═══════ -->
-<div id="screen-login" class="screen active">
+<div id="screen-login" class="screen">
   <div class="auth-hero">
     <div class="auth-logo">Nexus Music <span>Share</span></div>
     <div class="auth-tagline">Instrument Lending Platform for Nexus International School</div>
@@ -315,7 +322,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.56</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.61</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -696,6 +703,7 @@ async function doRegister() {
 }
 
 async function doLogout() {
+  lsClear(); // clear before nulling currentUser
   await sb.auth.signOut();
   currentUser = null; currentProfile = null;
   allListings = []; cachedConversations = null; cachedRequests = { incoming: null, outgoing: null };
@@ -713,16 +721,37 @@ async function enterHome() {
   document.getElementById('home-uname').textContent = name;
   applyAvatars();
   history.replaceState(null, '', window.location.pathname);
-  // load everything before showing home so cache is ready
-  await Promise.all([loadListings(), preloadChatData()]);
+  // load local cache instantly, then sync listings from server
+  loadChatFromLocal();
+  await loadListings();
   showScreen('screen-home');
   renderBrowse();
   updateStats();
+  // sync chat data from server in background (no await)
+  preloadChatData();
 }
 
 async function loadListings() {
   const { data, error } = await sb.from('listings').select('*').order('created_at', { ascending: false });
   if (!error) allListings = data || [];
+}
+
+/* ── local storage cache ── */
+function lsKey(k) { return `nms_${currentUser.id}_${k}`; }
+function lsSave(k, v) { try { localStorage.setItem(lsKey(k), JSON.stringify(v)); } catch(e) {} }
+function lsLoad(k) { try { return JSON.parse(localStorage.getItem(lsKey(k))); } catch(e) { return null; } }
+function lsClear() { if (!currentUser) return; ['convos','reqIn','reqOut'].forEach(k => localStorage.removeItem(lsKey(k))); }
+
+function loadChatFromLocal() {
+  const convos = lsLoad('convos');
+  const reqIn  = lsLoad('reqIn');
+  const reqOut = lsLoad('reqOut');
+  if (convos) {
+    cachedConversations = convos;
+    convos.forEach(c => { threadMap[`conv-${c.otherId}`] = { receiverId: c.otherId, receiverName: c.info.name, subject: c.info.subject, reqId: c.info.reqId || null }; });
+  }
+  if (reqIn)  cachedRequests.incoming = reqIn;
+  if (reqOut) cachedRequests.outgoing = reqOut;
 }
 
 async function preloadChatData() {
@@ -736,9 +765,8 @@ async function preloadChatData() {
   cachedRequests.incoming = reqInRes.data || [];
   cachedRequests.outgoing = reqOutRes.data || [];
 
-  // build conversations from messages
   const msgs = msgRes.data || [];
-  const reqs = [...(cachedRequests.incoming), ...(cachedRequests.outgoing)];
+  const reqs = [...cachedRequests.incoming, ...cachedRequests.outgoing];
   const ownerIds = [...new Set(reqs.filter(r => r.owner_id !== currentUser.id).map(r => r.owner_id))];
   const ownerProfiles = ownerIds.length ? (await sb.from('profiles').select('id,name').in('id', ownerIds)).data || [] : [];
   const ownerNameMap = {};
@@ -759,6 +787,10 @@ async function preloadChatData() {
       threadMap[`conv-${otherId}`] = { receiverId: otherId, receiverName: info.name, subject: info.subject, reqId: info.reqId || null };
     }
   }
+  // save to localStorage
+  lsSave('convos', cachedConversations);
+  lsSave('reqIn', cachedRequests.incoming);
+  lsSave('reqOut', cachedRequests.outgoing);
 }
 
 function updateStats() {
@@ -1047,9 +1079,16 @@ function reqCard(r, isIncoming, ownerName) {
 async function renderConversations() {
   const wrap = document.getElementById('chat-conversations');
   if (!wrap) return;
-  // render from cache instantly, then refresh in background
+  // show instantly from cache
   renderConversationsFromCache(wrap);
-  preloadChatData().then(() => renderConversationsFromCache(wrap));
+  // only fetch from server if cache was empty
+  if (!cachedConversations || !cachedConversations.length) {
+    await preloadChatData();
+    renderConversationsFromCache(wrap);
+  } else {
+    // refresh in background silently
+    preloadChatData().then(() => renderConversationsFromCache(wrap));
+  }
 }
 
 function renderConversationsFromCache(wrap) {
@@ -1070,64 +1109,6 @@ function renderConversationsFromCache(wrap) {
   }).join('');
 }
 
-async function _oldRenderConversations() {
-  const wrap = document.getElementById('chat-conversations');
-  if (!wrap) return;
-
-  // run all queries in parallel
-  const [msgRes, reqRes] = await Promise.all([
-    sb.from('messages').select('id,sender_id,receiver_id,sender_name,content,created_at,request_id')
-      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-      .order('created_at', { ascending: false })
-      .limit(100),
-    sb.from('requests').select('id,borrower_id,borrower_name,owner_id,instrument_name')
-      .or(`borrower_id.eq.${currentUser.id},owner_id.eq.${currentUser.id}`)
-  ]);
-
-  const data = msgRes.data || [];
-  if (!data.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-message-off"></i>No conversations yet</div>'; return; }
-
-  // group by the other person
-  const seen = new Set();
-  const convos = [];
-  for (const m of data) {
-    const otherId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
-    if (!seen.has(otherId)) {
-      seen.add(otherId);
-      convos.push({ otherId, otherName: m.sender_id !== currentUser.id ? m.sender_name : 'them', lastMsg: m.content, time: m.created_at, reqId: m.request_id });
-    }
-  }
-
-  // build name map from requests (no extra query needed)
-  const reqs = reqRes.data || [];
-  const ownerIds = [...new Set(reqs.filter(r => r.owner_id !== currentUser.id).map(r => r.owner_id))];
-  const ownerProfiles = ownerIds.length
-    ? (await sb.from('profiles').select('id,name').in('id', ownerIds)).data || []
-    : [];
-  const ownerNameMap = {};
-  ownerProfiles.forEach(p => { ownerNameMap[p.id] = p.name; });
-  const nameMap = {};
-  reqs.forEach(r => {
-    if (r.borrower_id !== currentUser.id) nameMap[r.borrower_id] = { name: r.borrower_name, subject: r.instrument_name, reqId: r.id };
-    if (r.owner_id !== currentUser.id) nameMap[r.owner_id] = { name: ownerNameMap[r.owner_id] || 'Owner', subject: r.instrument_name, reqId: r.id };
-  });
-
-  wrap.innerHTML = convos.map(c => {
-    const info = nameMap[c.otherId] || { name: c.otherName, subject: '', reqId: c.reqId };
-    const preview = c.lastMsg.startsWith('📷') ? '📷 Photo' : c.lastMsg.slice(0, 40) + (c.lastMsg.length > 40 ? '…' : '');
-    const time = new Date(c.time).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-    const key = `conv-${c.otherId}`;
-    threadMap[key] = { receiverId: c.otherId, receiverName: info.name, subject: info.subject, reqId: info.reqId || null };
-    return `<div class="listing-row" style="cursor:pointer" onclick="openThreadByKey('${key}')">
-      <div class="listing-icon" style="background:var(--t50);font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--t600)">${info.name[0].toUpperCase()}</div>
-      <div class="listing-info">
-        <div class="listing-name">${info.name}${info.subject ? ' · ' + info.subject : ''}</div>
-        <div class="listing-meta">${preview}</div>
-      </div>
-      <div style="font-size:10px;color:var(--hint)">${time}</div>
-    </div>`;
-  }).join('');
-}
 
 function renderIncoming() {
   const wrap = document.getElementById('chat-incoming');
@@ -1212,9 +1193,12 @@ async function openThread(receiverId, receiverName, subject, reqId) {
   threadInterval = sb.channel(`thread-${currentUser.id}-${threadReceiverId}`)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
       const m = payload.new;
-      if ((m.sender_id === currentUser.id && m.receiver_id === threadReceiverId) ||
-          (m.sender_id === threadReceiverId && m.receiver_id === currentUser.id)) {
-        loadMessages(true); // append only — fast
+      // only append for messages from the OTHER person — own messages already shown optimistically
+      if (m.sender_id === threadReceiverId && m.receiver_id === currentUser.id) {
+        loadMessages(true);
+      } else if (m.sender_id === currentUser.id && m.receiver_id === threadReceiverId) {
+        // update lastMessageId so next append query is correct
+        lastMessageId = m.id;
       }
     })
     .subscribe();
@@ -1253,6 +1237,18 @@ let lastMessageId = null;
 async function loadMessages(appendOnly = false) {
   if (!threadReceiverId) return;
   const wrap = document.getElementById('thread-messages');
+  const msgCacheKey = `msgs_${threadReceiverId}`;
+
+  // show local cache instantly on first load
+  if (!appendOnly) {
+    const local = lsLoad(msgCacheKey);
+    if (local && local.length) {
+      wrap.innerHTML = local.map(renderBubble).join('');
+      wrap.scrollTop = wrap.scrollHeight;
+      lastMessageId = local[local.length - 1].id;
+    }
+  }
+
   let query = sb.from('messages').select('*')
     .in('sender_id', [currentUser.id, threadReceiverId])
     .in('receiver_id', [currentUser.id, threadReceiverId])
@@ -1260,7 +1256,7 @@ async function loadMessages(appendOnly = false) {
   if (appendOnly && lastMessageId) query = query.gt('id', lastMessageId);
   const { data } = await query;
   if (!data || !data.length) {
-    if (!appendOnly) wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
+    if (!appendOnly && !lsLoad(msgCacheKey)) wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
     return;
   }
   lastMessageId = data[data.length - 1].id;
@@ -1270,6 +1266,8 @@ async function loadMessages(appendOnly = false) {
     wrap.innerHTML = data.map(renderBubble).join('');
   }
   wrap.scrollTop = wrap.scrollHeight;
+  // save to localStorage
+  lsSave(msgCacheKey, data);
 }
 
 async function sendMessage() {
