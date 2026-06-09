@@ -278,7 +278,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.48</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.49</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -1078,6 +1078,29 @@ function closeThread() {
   document.getElementById('screen-thread').style.display = 'none';
 }
 
+function renderBubble(m) {
+  const mine = m.sender_id === currentUser.id;
+  const myAvatar = currentProfile?.avatar_url || '';
+  const myName = currentProfile?.name || currentUser.email.split('@')[0];
+  const time = new Date(m.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+  const isPhoto = m.content.startsWith('📷 [Photo]\n');
+  const bubbleContent = isPhoto
+    ? `<img src="${m.content.replace('📷 [Photo]\n','')}" style="max-width:200px;border-radius:8px;display:block" />`
+    : m.content;
+  const avatarUrl = mine ? myAvatar : threadReceiverAvatar;
+  const avatarLetter = mine ? myName[0].toUpperCase() : m.sender_name[0].toUpperCase();
+  const avatarEl = avatarUrl
+    ? `<img src="${avatarUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
+    : `<div style="width:28px;height:28px;border-radius:50%;background:var(--t400);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">${avatarLetter}</div>`;
+  return `<div style="display:flex;align-items:flex-end;gap:8px;flex-direction:${mine ? 'row-reverse' : 'row'};width:100%">
+    ${avatarEl}
+    <div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'};flex:1;min-width:0">
+      <div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">${bubbleContent}</div>
+      <div class="msg-time">${time}</div>
+    </div>
+  </div>`;
+}
+
 async function loadMessages() {
   if (!threadReceiverId) return;
   const { data } = await sb.from('messages').select('*')
@@ -1089,29 +1112,7 @@ async function loadMessages() {
     wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
     return;
   }
-  const myAvatar = currentProfile?.avatar_url || '';
-  const myName = currentProfile?.name || currentUser.email.split('@')[0];
-
-  wrap.innerHTML = data.map(m => {
-    const mine = m.sender_id === currentUser.id;
-    const time = new Date(m.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-    const isPhoto = m.content.startsWith('📷 [Photo]\n');
-    const bubbleContent = isPhoto
-      ? `<img src="${m.content.replace('📷 [Photo]\n','')}" style="max-width:200px;border-radius:8px;display:block" />`
-      : m.content;
-    const avatarUrl = mine ? myAvatar : threadReceiverAvatar;
-    const avatarLetter = mine ? myName[0].toUpperCase() : m.sender_name[0].toUpperCase();
-    const avatarEl = avatarUrl
-      ? `<img src="${avatarUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
-      : `<div style="width:28px;height:28px;border-radius:50%;background:var(--t400);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">${avatarLetter}</div>`;
-    return `<div style="display:flex;align-items:flex-end;gap:8px;flex-direction:${mine ? 'row-reverse' : 'row'};width:100%">
-      ${avatarEl}
-      <div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'};flex:1;min-width:0">
-        <div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">${bubbleContent}</div>
-        <div class="msg-time">${time}</div>
-      </div>
-    </div>`;
-  }).join('');
+  wrap.innerHTML = data.map(renderBubble).join('');
   wrap.scrollTop = wrap.scrollHeight;
 }
 
@@ -1122,18 +1123,26 @@ async function sendMessage() {
   const myName = currentProfile?.name || currentUser.email.split('@')[0];
   input.value = '';
   input.focus();
-  const payload = {
-    sender_id: currentUser.id,
-    receiver_id: threadReceiverId,
-    sender_name: myName,
-    content
-  };
-  // only include request_id if it's a valid non-empty value
-  if (threadRequestId && threadRequestId !== 'null' && threadRequestId !== '') {
-    payload.request_id = threadRequestId;
-  }
+
+  // optimistic: show message instantly
+  const wrap = document.getElementById('thread-messages');
+  const tempId = 'temp-' + Date.now();
+  const tempMsg = { id: tempId, sender_id: currentUser.id, receiver_id: threadReceiverId, sender_name: myName, content, created_at: new Date().toISOString() };
+  const emptyMsg = wrap.querySelector('div[style*="color:var(--hint)"]');
+  if (emptyMsg) wrap.innerHTML = '';
+  wrap.insertAdjacentHTML('beforeend', renderBubble(tempMsg));
+  wrap.scrollTop = wrap.scrollHeight;
+
+  const payload = { sender_id: currentUser.id, receiver_id: threadReceiverId, sender_name: myName, content };
+  if (threadRequestId && threadRequestId !== 'null' && threadRequestId !== '') payload.request_id = threadRequestId;
   const { error } = await sb.from('messages').insert(payload);
-  if (error) { showToast('toast-home', 'Error: ' + error.message, true); input.value = content; return; }
+  if (error) {
+    showToast('toast-home', 'Error: ' + error.message, true);
+    input.value = content;
+    document.getElementById(tempId)?.remove();
+    return;
+  }
+  // replace temp with real data
   await loadMessages();
 }
 
