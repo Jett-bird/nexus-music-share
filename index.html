@@ -315,7 +315,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.53</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.56</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -580,6 +580,8 @@ let currentUser = null;
 let currentProfile = null;
 let currentFilter = 'All';
 let allListings = [];
+let cachedConversations = null;
+let cachedRequests = { incoming: null, outgoing: null };
 let rentItem = null;
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
@@ -696,7 +698,7 @@ async function doRegister() {
 async function doLogout() {
   await sb.auth.signOut();
   currentUser = null; currentProfile = null;
-  allListings = [];
+  allListings = []; cachedConversations = null; cachedRequests = { incoming: null, outgoing: null };
   document.getElementById('login-email').value = '';
   document.getElementById('login-pw').value = '';
   const btn = document.getElementById('login-btn');
@@ -711,8 +713,9 @@ async function enterHome() {
   document.getElementById('home-uname').textContent = name;
   applyAvatars();
   history.replaceState(null, '', window.location.pathname);
+  // load everything before showing home so cache is ready
+  await Promise.all([loadListings(), preloadChatData()]);
   showScreen('screen-home');
-  await loadListings();
   renderBrowse();
   updateStats();
 }
@@ -720,6 +723,42 @@ async function enterHome() {
 async function loadListings() {
   const { data, error } = await sb.from('listings').select('*').order('created_at', { ascending: false });
   if (!error) allListings = data || [];
+}
+
+async function preloadChatData() {
+  const [msgRes, reqInRes, reqOutRes] = await Promise.all([
+    sb.from('messages').select('id,sender_id,receiver_id,sender_name,content,created_at,request_id')
+      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+      .order('created_at', { ascending: false }).limit(100),
+    sb.from('requests').select('*').eq('owner_id', currentUser.id).order('created_at', { ascending: false }),
+    sb.from('requests').select('*').eq('borrower_id', currentUser.id).order('created_at', { ascending: false })
+  ]);
+  cachedRequests.incoming = reqInRes.data || [];
+  cachedRequests.outgoing = reqOutRes.data || [];
+
+  // build conversations from messages
+  const msgs = msgRes.data || [];
+  const reqs = [...(cachedRequests.incoming), ...(cachedRequests.outgoing)];
+  const ownerIds = [...new Set(reqs.filter(r => r.owner_id !== currentUser.id).map(r => r.owner_id))];
+  const ownerProfiles = ownerIds.length ? (await sb.from('profiles').select('id,name').in('id', ownerIds)).data || [] : [];
+  const ownerNameMap = {};
+  ownerProfiles.forEach(p => { ownerNameMap[p.id] = p.name; });
+  const nameMap = {};
+  reqs.forEach(r => {
+    if (r.borrower_id !== currentUser.id) nameMap[r.borrower_id] = { name: r.borrower_name, subject: r.instrument_name, reqId: r.id };
+    if (r.owner_id !== currentUser.id) nameMap[r.owner_id] = { name: ownerNameMap[r.owner_id] || 'Owner', subject: r.instrument_name, reqId: r.id };
+  });
+  const seen = new Set();
+  cachedConversations = [];
+  for (const m of msgs) {
+    const otherId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
+    if (!seen.has(otherId)) {
+      seen.add(otherId);
+      const info = nameMap[otherId] || { name: m.sender_id !== currentUser.id ? m.sender_name : 'User', subject: '', reqId: m.request_id };
+      cachedConversations.push({ otherId, info, lastMsg: m.content, time: m.created_at });
+      threadMap[`conv-${otherId}`] = { receiverId: otherId, receiverName: info.name, subject: info.subject, reqId: info.reqId || null };
+    }
+  }
 }
 
 function updateStats() {
@@ -739,7 +778,7 @@ function switchTab(tab) {
   });
   if (tab === 'mylist') renderMyListings();
   if (tab === 'apply') { renderIncoming(); renderOutgoing(); }
-  if (tab === 'chat') { renderConversations(); renderOutgoing(); unreadMessages = 0; showChatDot(false); }
+  if (tab === 'chat') { Promise.all([renderConversations(), renderOutgoing()]); unreadMessages = 0; showChatDot(false); }
   if (tab === 'account') renderAccount();
 }
 
@@ -1008,40 +1047,71 @@ function reqCard(r, isIncoming, ownerName) {
 async function renderConversations() {
   const wrap = document.getElementById('chat-conversations');
   if (!wrap) return;
-  // get all messages involving current user
-  const { data } = await sb.from('messages').select('*')
-    .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-    .order('created_at', { ascending: false });
-  if (!data || !data.length) {
-    wrap.innerHTML = '<div class="empty-state"><i class="ti ti-message-off"></i>No conversations yet</div>';
-    return;
-  }
+  // render from cache instantly, then refresh in background
+  renderConversationsFromCache(wrap);
+  preloadChatData().then(() => renderConversationsFromCache(wrap));
+}
+
+function renderConversationsFromCache(wrap) {
+  if (!cachedConversations) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div>'; return; }
+  if (!cachedConversations.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-message-off"></i>No conversations yet</div>'; return; }
+  wrap.innerHTML = cachedConversations.map(c => {
+    const preview = c.lastMsg.startsWith('📷') ? '📷 Photo' : c.lastMsg.slice(0, 40) + (c.lastMsg.length > 40 ? '…' : '');
+    const time = new Date(c.time).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    const key = `conv-${c.otherId}`;
+    return `<div class="listing-row" style="cursor:pointer" onclick="openThreadByKey('${key}')">
+      <div class="listing-icon" style="background:var(--t50);font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--t600)">${c.info.name[0].toUpperCase()}</div>
+      <div class="listing-info">
+        <div class="listing-name">${c.info.name}${c.info.subject ? ' · ' + c.info.subject : ''}</div>
+        <div class="listing-meta">${preview}</div>
+      </div>
+      <div style="font-size:10px;color:var(--hint)">${time}</div>
+    </div>`;
+  }).join('');
+}
+
+async function _oldRenderConversations() {
+  const wrap = document.getElementById('chat-conversations');
+  if (!wrap) return;
+
+  // run all queries in parallel
+  const [msgRes, reqRes] = await Promise.all([
+    sb.from('messages').select('id,sender_id,receiver_id,sender_name,content,created_at,request_id')
+      .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+      .order('created_at', { ascending: false })
+      .limit(100),
+    sb.from('requests').select('id,borrower_id,borrower_name,owner_id,instrument_name')
+      .or(`borrower_id.eq.${currentUser.id},owner_id.eq.${currentUser.id}`)
+  ]);
+
+  const data = msgRes.data || [];
+  if (!data.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-message-off"></i>No conversations yet</div>'; return; }
+
   // group by the other person
   const seen = new Set();
   const convos = [];
   for (const m of data) {
     const otherId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
-    const otherName = m.sender_id === currentUser.id ? 'them' : m.sender_name;
     if (!seen.has(otherId)) {
       seen.add(otherId);
-      convos.push({ otherId, otherName, lastMsg: m.content, time: m.created_at, reqId: m.request_id });
+      convos.push({ otherId, otherName: m.sender_id !== currentUser.id ? m.sender_name : 'them', lastMsg: m.content, time: m.created_at, reqId: m.request_id });
     }
   }
-  // get names from requests + profiles
-  const { data: reqs } = await sb.from('requests').select('id,borrower_id,borrower_name,owner_id,instrument_name')
-    .or(`borrower_id.eq.${currentUser.id},owner_id.eq.${currentUser.id}`);
-  // collect owner IDs to look up their names
-  const ownerIds = [...new Set((reqs || []).filter(r => r.owner_id !== currentUser.id).map(r => r.owner_id))];
-  const { data: ownerProfiles } = ownerIds.length
-    ? await sb.from('profiles').select('id,name').in('id', ownerIds)
-    : { data: [] };
+
+  // build name map from requests (no extra query needed)
+  const reqs = reqRes.data || [];
+  const ownerIds = [...new Set(reqs.filter(r => r.owner_id !== currentUser.id).map(r => r.owner_id))];
+  const ownerProfiles = ownerIds.length
+    ? (await sb.from('profiles').select('id,name').in('id', ownerIds)).data || []
+    : [];
   const ownerNameMap = {};
-  (ownerProfiles || []).forEach(p => { ownerNameMap[p.id] = p.name; });
+  ownerProfiles.forEach(p => { ownerNameMap[p.id] = p.name; });
   const nameMap = {};
-  (reqs || []).forEach(r => {
+  reqs.forEach(r => {
     if (r.borrower_id !== currentUser.id) nameMap[r.borrower_id] = { name: r.borrower_name, subject: r.instrument_name, reqId: r.id };
     if (r.owner_id !== currentUser.id) nameMap[r.owner_id] = { name: ownerNameMap[r.owner_id] || 'Owner', subject: r.instrument_name, reqId: r.id };
   });
+
   wrap.innerHTML = convos.map(c => {
     const info = nameMap[c.otherId] || { name: c.otherName, subject: '', reqId: c.reqId };
     const preview = c.lastMsg.startsWith('📷') ? '📷 Photo' : c.lastMsg.slice(0, 40) + (c.lastMsg.length > 40 ? '…' : '');
@@ -1059,24 +1129,23 @@ async function renderConversations() {
   }).join('');
 }
 
-async function renderIncoming() {
-  const { data } = await sb.from('requests').select('*').eq('owner_id', currentUser.id).order('created_at', { ascending: false });
+function renderIncoming() {
   const wrap = document.getElementById('chat-incoming');
   if (!wrap) return;
-  wrap.innerHTML = (data && data.length) ? data.map(r => reqCard(r, true)).join('') : '<div class="empty-state"><i class="ti ti-inbox"></i>No incoming requests</div>';
+  const data = cachedRequests.incoming;
+  if (!data) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = data.length ? data.map(r => reqCard(r, true)).join('') : '<div class="empty-state"><i class="ti ti-inbox"></i>No incoming requests</div>';
 }
 
-async function renderOutgoing() {
-  const { data } = await sb.from('requests').select('*').eq('borrower_id', currentUser.id).order('created_at', { ascending: false });
+function renderOutgoing() {
   const wrap = document.getElementById('chat-outgoing');
   if (!wrap) return;
-  if (!data || !data.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-send"></i>No outgoing requests</div>'; return; }
-  // fetch owner names
-  const ownerIds = [...new Set(data.map(r => r.owner_id))];
-  const { data: profiles } = await sb.from('profiles').select('id,name').in('id', ownerIds);
-  const profileMap = {};
-  (profiles || []).forEach(p => { profileMap[p.id] = p.name; });
-  wrap.innerHTML = data.map(r => reqCard(r, false, profileMap[r.owner_id] || 'Owner')).join('');
+  const data = cachedRequests.outgoing;
+  if (!data) { wrap.innerHTML = ''; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-send"></i>No outgoing requests</div>'; return; }
+  const ownerNameMap = {};
+  (cachedConversations || []).forEach(c => { ownerNameMap[c.otherId] = c.info.name; });
+  wrap.innerHTML = data.map(r => reqCard(r, false, ownerNameMap[r.owner_id] || 'Owner')).join('');
 }
 
 async function renderChat() { await renderIncoming(); await renderOutgoing(); }
@@ -1093,7 +1162,8 @@ async function respondRequest(reqId, listingId, status, borrowerId) {
     const myName = currentProfile?.name || currentUser.email.split('@')[0];
     await sb.from('messages').insert({ sender_id: currentUser.id, receiver_id: borrowerId, sender_name: myName, content: '✅ Your request has been accepted! Please arrange pickup with me.', request_id: reqId });
   }
-  renderChat();
+  await preloadChatData();
+  renderIncoming(); renderOutgoing();
   showToast('toast-home', status === 'accepted' ? 'Request accepted!' : 'Request declined');
 }
 
