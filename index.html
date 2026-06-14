@@ -108,7 +108,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 .badge-ok{background:var(--t50);color:var(--t800)}
 .badge-out{background:var(--a50);color:var(--a400)}
 .badge-na{background:var(--g50);color:var(--g600)}
-.badge-del{background:var(--c50);color:var(--c400);border:none;cursor:pointer;font-size:13px;padding:3px 8px;flex-shrink:0}
+.badge-del{background:var(--c50);color:var(--c400);border:none;cursor:pointer;flex-shrink:0}
 .av-option{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;margin-bottom:8px;text-align:left;transition:all 0.15s;display:flex;align-items:center;gap:10px}
 .av-option:hover{border-color:var(--t400)}
 .av-active{border-color:var(--t400);background:var(--t50);color:var(--t800)}
@@ -197,6 +197,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <div id="screen-splash" class="screen active splash-screen">
   <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff">Nexus Music <span style="color:var(--t200)">Share</span></div>
   <i class="ti ti-loader-2" style="font-size:24px;color:rgba(255,255,255,0.4);animation:spin 1s linear infinite"></i>
+  <div id="splash-msg" style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px"></div>
 </div>
 
 <!-- ═══════ LOGIN ═══════ -->
@@ -323,7 +324,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.66</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.69</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -670,9 +671,10 @@ async function doLogin() {
   if (!email || !pw) { showToast('toast-login', 'Please enter your email and password', true); return; }
   setLoading('login-btn', true);
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
-  setLoading('login-btn', false);
-  if (error) { showToast('toast-login', 'Invalid email or password. Please try again.', true); return; }
+  if (error) { setLoading('login-btn', false); showToast('toast-login', 'Invalid email or password. Please try again.', true); return; }
   currentUser = data.user;
+  showScreen('screen-splash');
+  document.getElementById('splash-msg').textContent = 'Signing in…';
   await loadProfile();
   await enterHome();
 }
@@ -704,7 +706,8 @@ async function doRegister() {
 }
 
 async function doLogout() {
-  lsClear(); // clear before nulling currentUser
+  // don't clear localStorage — keys are user-ID specific so other users can't see them,
+  // and keeping cache means instant load on next login
   await sb.auth.signOut();
   currentUser = null; currentProfile = null;
   allListings = []; cachedConversations = null; cachedRequests = { incoming: null, outgoing: null };
@@ -725,13 +728,12 @@ async function enterHome() {
   // load local cache instantly, then sync listings from server
   loadChatFromLocal();
   await loadListings();
-  autoExpireLoans(); // background — no await
+  autoExpireLoans();   // background
+  preloadChatData();   // background — cache already loaded above
   showScreen('screen-home');
   switchTab('browse');
   renderBrowse();
   updateStats();
-  // sync chat data from server in background (no await)
-  preloadChatData();
 }
 
 async function loadListings() {
@@ -879,29 +881,34 @@ function renderBrowse() {
 
 /* ── auto-expire loans ── */
 async function autoExpireLoans() {
-  // local date in user's timezone e.g. "2026-06-12"
   const d = new Date();
   const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const myListings = allListings.filter(l => l.user_id === currentUser.id);
-  const expired = myListings.filter(l => {
+  const onLoan = myListings.filter(l => {
     const s = l.status || (l.available ? 'available' : 'on_loan');
     return s === 'on_loan';
   });
-  if (!expired.length) return;
-  // fetch their accepted requests
-  const ids = expired.map(l => l.id);
+  if (!onLoan.length) return;
+
+  const ids = onLoan.map(l => l.id);
   const { data: reqs } = await sb.from('requests')
-    .select('listing_id, end_date')
+    .select('id, listing_id, end_date')
     .in('listing_id', ids)
     .eq('status', 'accepted');
   const reqMap = {};
-  (reqs || []).forEach(r => { reqMap[r.listing_id] = r.end_date; });
-  for (const item of expired) {
-    const endDate = reqMap[item.id];
-    // expire if: no accepted request found, OR end_date is today or earlier
-    if (!endDate || endDate <= today) {
-      const { error } = await sb.from('listings').update({ status: 'available', available: true }).eq('id', item.id);
-      if (!error) { item.status = 'available'; item.available = true; }
+  (reqs || []).forEach(r => { reqMap[r.listing_id] = r; });
+
+  for (const item of onLoan) {
+    const req = reqMap[item.id];
+    const endDate = req?.end_date;
+    // expire: no accepted request OR end_date has passed
+    if (!endDate || endDate < today) {
+      // update listing: only set available=true (avoids needing status column)
+      await sb.from('listings').update({ available: true, status: 'available' }).eq('id', item.id);
+      // also mark request as completed so it no longer blocks
+      if (req?.id) await sb.from('requests').update({ status: 'completed' }).eq('id', req.id);
+      item.available = true;
+      item.status = 'available';
     }
   }
   renderBrowse();
@@ -935,12 +942,15 @@ async function renderMyListings() {
         <div class="listing-meta">${metaLine}</div>
       </div>
       <button class="badge ${statusBadgeClass(item)}" onclick="openAvailabilityModal('${item.id}')" style="border:none;cursor:pointer" title="Change availability">${statusLabel(item)}</button>
-      <button class="badge badge-del" onclick="deleteListing('${item.id}')" title="Remove listing"><i class="ti ti-trash"></i></button>
+      ${status !== 'on_loan' ? `<button class="badge badge-del" onclick="deleteListing('${item.id}')" title="Remove listing"><i class="ti ti-trash"></i> Delete</button>` : ''}
     </div>`;
   }).join('');
 }
 
 async function deleteListing(id) {
+  const item = allListings.find(l => l.id === id);
+  const s = item?.status || (item?.available ? 'available' : 'on_loan');
+  if (s === 'on_loan') { showToast('toast-home', 'Cannot delete — instrument is currently on loan', true); return; }
   if (!confirm('Remove this listing?')) return;
   const { error } = await sb.from('listings').delete().eq('id', id);
   if (error) { showToast('toast-home', 'Could not remove listing', true); return; }
