@@ -108,6 +108,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 .badge-ok{background:var(--t50);color:var(--t800)}
 .badge-out{background:var(--a50);color:var(--a400)}
 .badge-na{background:var(--g50);color:var(--g600)}
+.badge-del{background:var(--c50);color:var(--c400);border:none;cursor:pointer;font-size:13px;padding:3px 8px;flex-shrink:0}
 .av-option{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;margin-bottom:8px;text-align:left;transition:all 0.15s;display:flex;align-items:center;gap:10px}
 .av-option:hover{border-color:var(--t400)}
 .av-active{border-color:var(--t400);background:var(--t50);color:var(--t800)}
@@ -322,7 +323,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.61</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.66</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -724,7 +725,9 @@ async function enterHome() {
   // load local cache instantly, then sync listings from server
   loadChatFromLocal();
   await loadListings();
+  autoExpireLoans(); // background — no await
   showScreen('screen-home');
+  switchTab('browse');
   renderBrowse();
   updateStats();
   // sync chat data from server in background (no await)
@@ -776,6 +779,15 @@ async function preloadChatData() {
     if (r.borrower_id !== currentUser.id) nameMap[r.borrower_id] = { name: r.borrower_name, subject: r.instrument_name, reqId: r.id };
     if (r.owner_id !== currentUser.id) nameMap[r.owner_id] = { name: ownerNameMap[r.owner_id] || 'Owner', subject: r.instrument_name, reqId: r.id };
   });
+  // group messages by conversation partner
+  const threadMsgs = {}; // otherId → [msgs chronological]
+  const msgsChron = [...msgs].reverse(); // msgs came desc, flip to asc
+  for (const m of msgsChron) {
+    const otherId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
+    if (!threadMsgs[otherId]) threadMsgs[otherId] = [];
+    threadMsgs[otherId].push(m);
+  }
+
   const seen = new Set();
   cachedConversations = [];
   for (const m of msgs) {
@@ -787,10 +799,14 @@ async function preloadChatData() {
       threadMap[`conv-${otherId}`] = { receiverId: otherId, receiverName: info.name, subject: info.subject, reqId: info.reqId || null };
     }
   }
-  // save to localStorage
+  // save conversations + per-thread message caches to localStorage
   lsSave('convos', cachedConversations);
   lsSave('reqIn', cachedRequests.incoming);
   lsSave('reqOut', cachedRequests.outgoing);
+  // cache each thread's messages so openThread is instant
+  Object.entries(threadMsgs).forEach(([otherId, threadMsgList]) => {
+    lsSave(`msgs_${otherId}`, threadMsgList);
+  });
 }
 
 function updateStats() {
@@ -861,6 +877,37 @@ function renderBrowse() {
     </div>`).join('');
 }
 
+/* ── auto-expire loans ── */
+async function autoExpireLoans() {
+  // local date in user's timezone e.g. "2026-06-12"
+  const d = new Date();
+  const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const myListings = allListings.filter(l => l.user_id === currentUser.id);
+  const expired = myListings.filter(l => {
+    const s = l.status || (l.available ? 'available' : 'on_loan');
+    return s === 'on_loan';
+  });
+  if (!expired.length) return;
+  // fetch their accepted requests
+  const ids = expired.map(l => l.id);
+  const { data: reqs } = await sb.from('requests')
+    .select('listing_id, end_date')
+    .in('listing_id', ids)
+    .eq('status', 'accepted');
+  const reqMap = {};
+  (reqs || []).forEach(r => { reqMap[r.listing_id] = r.end_date; });
+  for (const item of expired) {
+    const endDate = reqMap[item.id];
+    // expire if: no accepted request found, OR end_date is today or earlier
+    if (!endDate || endDate <= today) {
+      const { error } = await sb.from('listings').update({ status: 'available', available: true }).eq('id', item.id);
+      if (!error) { item.status = 'available'; item.available = true; }
+    }
+  }
+  renderBrowse();
+  updateStats();
+}
+
 /* ── my listings ── */
 async function renderMyListings() {
   const mine = allListings.filter(l => l.user_id === currentUser.id);
@@ -888,9 +935,7 @@ async function renderMyListings() {
         <div class="listing-meta">${metaLine}</div>
       </div>
       <button class="badge ${statusBadgeClass(item)}" onclick="openAvailabilityModal('${item.id}')" style="border:none;cursor:pointer" title="Change availability">${statusLabel(item)}</button>
-      <button class="listing-del" onclick="deleteListing('${item.id}')" title="Remove listing">
-        <i class="ti ti-trash"></i>
-      </button>
+      <button class="badge badge-del" onclick="deleteListing('${item.id}')" title="Remove listing"><i class="ti ti-trash"></i></button>
     </div>`;
   }).join('');
 }
@@ -1176,18 +1221,28 @@ async function openThread(receiverId, receiverName, subject, reqId) {
   threadRequestId = (reqId && reqId !== 'null' && reqId !== '') ? reqId : null;
   threadReceiverAvatar = null;
   lastMessageId = null;
-  // fetch receiver's avatar
-  if (threadReceiverId) {
-    const { data: rp } = await sb.from('profiles').select('avatar_url,name').eq('id', threadReceiverId).single();
-    threadReceiverAvatar = rp?.avatar_url || null;
-  }
+  // show screen IMMEDIATELY — don't wait for network
   document.getElementById('thread-title').textContent = `${receiverName}${subject ? ' · ' + subject : ''}`;
-  document.getElementById('thread-messages').innerHTML = '';
+  const wrap = document.getElementById('thread-messages');
+  wrap.innerHTML = '';
   document.getElementById('screen-thread').style.display = 'flex';
-  await loadMessages();
   const inp = document.getElementById('msg-input');
   inp.onkeyup = e => { if (e.key === 'Enter') sendMessage(); };
   inp.focus();
+  // show cache instantly
+  const msgCacheKey = `msgs_${threadReceiverId}`;
+  const local = lsLoad(msgCacheKey);
+  if (local && local.length) {
+    wrap.innerHTML = local.map(renderBubble).join('');
+    wrap.scrollTop = wrap.scrollHeight;
+    lastMessageId = local[local.length - 1].id;
+  }
+  // fetch avatar + only new messages in background (no await)
+  (async () => {
+    const { data: rp } = await sb.from('profiles').select('avatar_url').eq('id', threadReceiverId).single();
+    threadReceiverAvatar = rp?.avatar_url || null;
+    await loadMessages(!!lastMessageId); // appendOnly if we have cache
+  })();
   // realtime subscription for this thread
   if (threadInterval) { threadInterval.unsubscribe(); }
   threadInterval = sb.channel(`thread-${currentUser.id}-${threadReceiverId}`)
@@ -1239,35 +1294,30 @@ async function loadMessages(appendOnly = false) {
   const wrap = document.getElementById('thread-messages');
   const msgCacheKey = `msgs_${threadReceiverId}`;
 
-  // show local cache instantly on first load
-  if (!appendOnly) {
-    const local = lsLoad(msgCacheKey);
-    if (local && local.length) {
-      wrap.innerHTML = local.map(renderBubble).join('');
-      wrap.scrollTop = wrap.scrollHeight;
-      lastMessageId = local[local.length - 1].id;
-    }
-  }
-
   let query = sb.from('messages').select('*')
     .in('sender_id', [currentUser.id, threadReceiverId])
     .in('receiver_id', [currentUser.id, threadReceiverId])
     .order('created_at', { ascending: true });
+  // if we already showed cache, only fetch NEW messages
   if (appendOnly && lastMessageId) query = query.gt('id', lastMessageId);
   const { data } = await query;
   if (!data || !data.length) {
-    if (!appendOnly && !lsLoad(msgCacheKey)) wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
+    if (!appendOnly) wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
     return;
   }
   lastMessageId = data[data.length - 1].id;
   if (appendOnly) {
-    data.forEach(m => wrap.insertAdjacentHTML('beforeend', renderBubble(m)));
+    // re-render with fresh avatars (in case avatar wasn't loaded when cache was shown)
+    const local = lsLoad(msgCacheKey) || [];
+    const merged = [...local.filter(m => !data.find(d => d.id === m.id)), ...data];
+    merged.sort((a, b) => a.id > b.id ? 1 : -1);
+    wrap.innerHTML = merged.map(renderBubble).join('');
+    lsSave(msgCacheKey, merged);
   } else {
     wrap.innerHTML = data.map(renderBubble).join('');
+    lsSave(msgCacheKey, data);
   }
   wrap.scrollTop = wrap.scrollHeight;
-  // save to localStorage
-  lsSave(msgCacheKey, data);
 }
 
 async function sendMessage() {
