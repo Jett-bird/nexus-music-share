@@ -21,8 +21,8 @@
   --bg:#f5f4f0;--surface:#fff;--border:#e0e0e0;
   --text:#1a1a1a;--muted:#666;--hint:#aaa;
 }
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;text-rendering:optimizeLegibility}
-.app{width:100%;min-height:100vh;background:var(--bg);overflow-x:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{width:100%;min-height:100vh;background:var(--bg)}
 
 /* ── nav ── */
 .nav{background:var(--t800);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:10}
@@ -35,7 +35,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .nav-btn:hover{background:rgba(255,255,255,0.25)}
 
 /* ── screens ── */
-.screen{display:none;will-change:opacity,transform}
+.screen{display:none}
 .screen.active{display:block}
 .splash-screen.active{display:flex;min-height:100vh;background:var(--t800);align-items:center;justify-content:center;flex-direction:column;gap:16px}
 
@@ -743,16 +743,32 @@ async function enterHome() {
   document.getElementById('home-uname').textContent = name;
   applyAvatars();
   history.replaceState(null, '', window.location.pathname);
-  // load local cache instantly, then sync listings from server
+  
+  // 1. Parallel Sync
   loadChatFromLocal();
-  renderConversations();    // Pre-render chat list instantly from local cache
-  preloadChatData();        // Sync in background
-  await loadListings();
+  const listingsFromLocal = lsLoad('allListings');
+  if (listingsFromLocal) {
+    allListings = listingsFromLocal;
+    renderBrowse();
+    updateStats();
+  }
+  
+  renderConversations();
+  
+  // Kick off background tasks simultaneously
+  Promise.all([
+    preloadChatData(),
+    loadListings().then(() => {
+      lsSave('allListings', allListings);
+      renderBrowse();
+      updateStats();
+    }),
+    loadMemberCount()
+  ]);
+
   autoExpireLoans();
   showScreen('screen-home');
   switchTab('browse');
-  renderBrowse();
-  updateStats();
 }
 
 async function loadListings() {
@@ -955,32 +971,41 @@ async function autoExpireLoans() {
 async function renderMyListings() {
   const mine = allListings.filter(l => l.user_id === currentUser.id);
   const wrap = document.getElementById('my-listings-wrap');
+  if (!wrap) return;
   if (!mine.length) {
     wrap.innerHTML = '<div class="empty-state"><i class="ti ti-mood-empty"></i>No listings yet<br>Tap the button below to post your first instrument</div>';
     return;
   }
-  // fetch active loans to show who borrowed each instrument
-  const { data: activeReqs } = await sb.from('requests').select('listing_id, borrower_name, borrower_email, start_date, end_date').eq('owner_id', currentUser.id).eq('status','accepted');
-  const loanMap = {};
-  (activeReqs || []).forEach(r => { loanMap[r.listing_id] = r; });
 
-  wrap.innerHTML = mine.map(item => {
-    const loan = loanMap[item.id];
-    const status = item.status || (item.available ? 'available' : 'on_loan');
-    const metaLine = status === 'on_loan' && loan
-      ? `<span style="color:var(--a400)">On loan to ${loan.borrower_name} · ${loan.start_date} → ${loan.end_date}</span>`
-      : `$${item.price}/wk · ${item.cat}${item.brand ? ' · '+item.brand : ''}${item.condition ? ' · '+item.condition : ''}`;
-    return `
-    <div class="listing-row">
-      <div class="listing-icon">${EMOJIS[item.cat] || '🎵'}</div>
-      <div class="listing-info">
-        <div class="listing-name">${item.name}</div>
-        <div class="listing-meta">${metaLine}</div>
-      </div>
-      <button class="badge ${statusBadgeClass(item)}" onclick="openAvailabilityModal('${item.id}')" style="border:none;cursor:pointer" title="Change availability">${statusLabel(item)}</button>
-      ${status !== 'on_loan' ? `<button class="badge badge-del" onclick="deleteListing('${item.id}')" title="Remove listing"><i class="ti ti-trash"></i> Delete</button>` : ''}
-    </div>`;
-  }).join('');
+  const renderInstant = (loanData = null) => {
+    const loanMap = {};
+    if (loanData) loanData.forEach(r => { loanMap[r.listing_id] = r; });
+
+    wrap.innerHTML = mine.map(item => {
+      const loan = loanMap[item.id];
+      const status = item.status || (item.available ? 'available' : 'on_loan');
+      const metaLine = status === 'on_loan' && loan
+        ? `<span style="color:var(--a400)">On loan to ${loan.borrower_name} · ${loan.start_date} → ${loan.end_date}</span>`
+        : `$${item.price}/wk · ${item.cat}${item.brand ? ' · '+item.brand : ''}${item.condition ? ' · '+item.condition : ''}`;
+      return `
+      <div class="listing-row">
+        <div class="listing-icon">${EMOJIS[item.cat] || '🎵'}</div>
+        <div class="listing-info">
+          <div class="listing-name">${item.name}</div>
+          <div class="listing-meta">${metaLine}</div>
+        </div>
+        <button class="badge ${statusBadgeClass(item)}" onclick="openAvailabilityModal('${item.id}')" style="border:none;cursor:pointer" title="Change availability">${statusLabel(item)}</button>
+        ${status !== 'on_loan' ? `<button class="badge badge-del" onclick="deleteListing('${item.id}')" title="Remove listing"><i class="ti ti-trash"></i> Delete</button>` : ''}
+      </div>`;
+    }).join('');
+  };
+
+  // 1. Show instantly from already loaded listings
+  renderInstant();
+
+  // 2. Enrich with background loan data
+  const { data: activeReqs } = await sb.from('requests').select('listing_id, borrower_name, borrower_email, start_date, end_date').eq('owner_id', currentUser.id).eq('status','accepted');
+  if (activeReqs) renderInstant(activeReqs);
 }
 
 let pendingDeleteId = null;
