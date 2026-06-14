@@ -4,13 +4,15 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Nexus Music Share</title>
+<link rel="dns-prefetch" href="https://kbhbpqtggujotmejmzkt.supabase.co" />
+<link rel="preconnect" href="https://kbhbpqtggujotmejmzkt.supabase.co" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
   --t50:#E1F5EE;--t100:#9FE1CB;--t200:#5DCAA5;--t400:#1D9E75;--t600:#0F6E56;--t800:#085041;
   --a50:#FAEEDA;--a200:#EF9F27;--a400:#BA7517;
@@ -19,8 +21,8 @@
   --bg:#f5f4f0;--surface:#fff;--border:#e0e0e0;
   --text:#1a1a1a;--muted:#666;--hint:#aaa;
 }
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.app{width:100%;min-height:100vh;background:var(--bg)}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;text-rendering:optimizeLegibility}
+.app{width:100%;min-height:100vh;background:var(--bg);overflow-x:hidden}
 
 /* ── nav ── */
 .nav{background:var(--t800);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:10}
@@ -33,7 +35,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .nav-btn:hover{background:rgba(255,255,255,0.25)}
 
 /* ── screens ── */
-.screen{display:none}
+.screen{display:none;will-change:opacity,transform}
 .screen.active{display:block}
 .splash-screen.active{display:flex;min-height:100vh;background:var(--t800);align-items:center;justify-content:center;flex-direction:column;gap:16px}
 
@@ -324,7 +326,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.69</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.73</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -353,7 +355,7 @@ textarea.form-input{resize:vertical;min-height:80px}
     <div class="tab" id="tab-btn-mylist" onclick="switchTab('mylist')">
       <i class="ti ti-music"></i>My Listings
     </div>
-    <div class="tab" id="tab-btn-chat" onclick="switchTab('chat')">
+    <div class="tab" id="tab-btn-chat" onclick="switchTab('chat')" onpointerenter="preloadChatData()">
       <div style="position:relative;display:inline-block">
         <i class="ti ti-message"></i>
         <span id="chat-dot" style="display:none;position:absolute;top:-2px;right:-4px;width:8px;height:8px;background:#e53e3e;border-radius:50%;border:1.5px solid var(--surface)"></span>
@@ -518,6 +520,22 @@ textarea.form-input{resize:vertical;min-height:80px}
       <span style="width:10px;height:10px;border-radius:50%;background:var(--g100);display:inline-block"></span>
       Unavailable — not for lending
     </button>
+  </div>
+</div>
+
+<!-- ═══════ DELETE CONFIRM MODAL ═══════ -->
+<div class="overlay" id="ov-delete">
+  <div class="modal" style="max-width:320px">
+    <div class="modal-hdr">
+      <div class="modal-title">Remove Listing</div>
+      <button class="close-x" onclick="closeOverlay('ov-delete')">&times;</button>
+    </div>
+    <div class="modal-sub" id="del-instrument-name" style="font-size:15px;color:var(--text);margin-bottom:1.25rem"></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:1.5rem">This will permanently remove the listing. This action cannot be undone.</div>
+    <div style="display:flex;gap:10px">
+      <button class="req-decline" style="flex:1" onclick="closeOverlay('ov-delete')">Cancel</button>
+      <button class="req-accept" style="flex:1;background:var(--c600);border-color:var(--c600)" id="del-confirm-btn" onclick="confirmDelete()">Delete</button>
+    </div>
   </div>
 </div>
 
@@ -727,9 +745,10 @@ async function enterHome() {
   history.replaceState(null, '', window.location.pathname);
   // load local cache instantly, then sync listings from server
   loadChatFromLocal();
+  renderConversations();    // Pre-render chat list instantly from local cache
+  preloadChatData();        // Sync in background
   await loadListings();
-  autoExpireLoans();   // background
-  preloadChatData();   // background — cache already loaded above
+  autoExpireLoans();
   showScreen('screen-home');
   switchTab('browse');
   renderBrowse();
@@ -751,15 +770,25 @@ function loadChatFromLocal() {
   const convos = lsLoad('convos');
   const reqIn  = lsLoad('reqIn');
   const reqOut = lsLoad('reqOut');
+  const avatars = lsLoad('avatars');
   if (convos) {
     cachedConversations = convos;
     convos.forEach(c => { threadMap[`conv-${c.otherId}`] = { receiverId: c.otherId, receiverName: c.info.name, subject: c.info.subject, reqId: c.info.reqId || null }; });
   }
   if (reqIn)  cachedRequests.incoming = reqIn;
   if (reqOut) cachedRequests.outgoing = reqOut;
+  if (avatars) Object.assign(avatarCache, avatars);
 }
 
-async function preloadChatData() {
+let _chatPreloadPromise = null;
+function preloadChatData() {
+  if (!_chatPreloadPromise) {
+    _chatPreloadPromise = _doPreloadChatData().finally(() => { _chatPreloadPromise = null; });
+  }
+  return _chatPreloadPromise;
+}
+
+async function _doPreloadChatData() {
   const [msgRes, reqInRes, reqOutRes] = await Promise.all([
     sb.from('messages').select('id,sender_id,receiver_id,sender_name,content,created_at,request_id')
       .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
@@ -800,6 +829,13 @@ async function preloadChatData() {
       cachedConversations.push({ otherId, info, lastMsg: m.content, time: m.created_at });
       threadMap[`conv-${otherId}`] = { receiverId: otherId, receiverName: info.name, subject: info.subject, reqId: info.reqId || null };
     }
+  }
+  // fetch avatars for all conversation partners and cache in memory
+  const partnerIds = [...seen];
+  if (partnerIds.length) {
+    const { data: avatarProfiles } = await sb.from('profiles').select('id,avatar_url').in('id', partnerIds);
+    (avatarProfiles || []).forEach(p => { if (p.avatar_url) avatarCache[p.id] = p.avatar_url; });
+    lsSave('avatars', avatarCache);
   }
   // save conversations + per-thread message caches to localStorage
   lsSave('convos', cachedConversations);
@@ -947,11 +983,22 @@ async function renderMyListings() {
   }).join('');
 }
 
-async function deleteListing(id) {
+let pendingDeleteId = null;
+
+function deleteListing(id) {
   const item = allListings.find(l => l.id === id);
   const s = item?.status || (item?.available ? 'available' : 'on_loan');
   if (s === 'on_loan') { showToast('toast-home', 'Cannot delete — instrument is currently on loan', true); return; }
-  if (!confirm('Remove this listing?')) return;
+  pendingDeleteId = id;
+  document.getElementById('del-instrument-name').textContent = `Are you sure you want to remove "${item?.name}"?`;
+  openOverlay('ov-delete');
+}
+
+async function confirmDelete() {
+  if (!pendingDeleteId) return;
+  const id = pendingDeleteId;
+  pendingDeleteId = null;
+  closeOverlay('ov-delete');
   const { error } = await sb.from('listings').delete().eq('id', id);
   if (error) { showToast('toast-home', 'Could not remove listing', true); return; }
   allListings = allListings.filter(l => l.id !== id);
@@ -1153,8 +1200,12 @@ function renderConversationsFromCache(wrap) {
     const preview = c.lastMsg.startsWith('📷') ? '📷 Photo' : c.lastMsg.slice(0, 40) + (c.lastMsg.length > 40 ? '…' : '');
     const time = new Date(c.time).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
     const key = `conv-${c.otherId}`;
-    return `<div class="listing-row" style="cursor:pointer" onclick="openThreadByKey('${key}')">
-      <div class="listing-icon" style="background:var(--t50);font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--t600)">${c.info.name[0].toUpperCase()}</div>
+    const avatarUrl = avatarCache[c.otherId];
+    const avatarEl = avatarUrl 
+      ? `<img src="${avatarUrl}" style="width:44px;height:44px;border-radius:8px;object-fit:cover" />`
+      : `<div class="listing-icon">${c.info.name[0].toUpperCase()}</div>`;
+    return `<div class="listing-row" style="cursor:pointer" onclick="openThreadByKey('${key}')" onpointerenter="preloadThreadMessages('${c.otherId}')">
+      ${avatarEl}
       <div class="listing-info">
         <div class="listing-name">${c.info.name}${c.info.subject ? ' · ' + c.info.subject : ''}</div>
         <div class="listing-meta">${preview}</div>
@@ -1226,44 +1277,71 @@ function openThreadByKey(key) {
   openThread(t.receiverId, t.receiverName, t.subject, t.reqId);
 }
 
+// Background preload when hovering
+function preloadThreadMessages(otherId) {
+  const msgCacheKey = `msgs_${otherId}`;
+  sb.from('messages').select('*')
+    .in('sender_id', [currentUser.id, otherId])
+    .in('receiver_id', [currentUser.id, otherId])
+    .order('created_at', { ascending: true })
+    .limit(50)
+    .then(({ data }) => {
+      if (data) lsSave(msgCacheKey, data);
+    });
+}
+
 async function openThread(receiverId, receiverName, subject, reqId) {
   threadReceiverId = receiverId || null;
   threadRequestId = (reqId && reqId !== 'null' && reqId !== '') ? reqId : null;
-  threadReceiverAvatar = null;
-  lastMessageId = null;
-  // show screen IMMEDIATELY — don't wait for network
-  document.getElementById('thread-title').textContent = `${receiverName}${subject ? ' · ' + subject : ''}`;
+  lastMessageTimestamp = null;
+  threadReceiverAvatar = avatarCache[threadReceiverId] || null;
+
   const wrap = document.getElementById('thread-messages');
-  wrap.innerHTML = '';
+  const msgCacheKey = `msgs_${threadReceiverId}`;
+  const local = lsLoad(msgCacheKey);
+
+  // Instant view: render from cache BEFORE showing screen to avoid flicker
+  if (local && local.length) {
+    wrap.innerHTML = local.map(renderBubble).join('');
+    lastMessageTimestamp = local[local.length - 1].created_at;
+  } else {
+    wrap.innerHTML = '<div class="empty-state"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div>';
+  }
+
+  document.getElementById('thread-title').textContent = `${receiverName}${subject ? ' · ' + subject : ''}`;
   document.getElementById('screen-thread').style.display = 'flex';
+  if (local && local.length) wrap.scrollTop = wrap.scrollHeight;
+
   const inp = document.getElementById('msg-input');
   inp.onkeyup = e => { if (e.key === 'Enter') sendMessage(); };
   inp.focus();
-  // show cache instantly
-  const msgCacheKey = `msgs_${threadReceiverId}`;
-  const local = lsLoad(msgCacheKey);
-  if (local && local.length) {
-    wrap.innerHTML = local.map(renderBubble).join('');
-    wrap.scrollTop = wrap.scrollHeight;
-    lastMessageId = local[local.length - 1].id;
+
+  // Background sync
+  loadNewMessages();
+  // if avatar not cached yet, fetch quietly and patch existing bubbles
+  if (!avatarCache[threadReceiverId]) {
+    sb.from('profiles').select('avatar_url').eq('id', threadReceiverId).single()
+      .then(({ data: rp }) => {
+        if (rp?.avatar_url) {
+          avatarCache[threadReceiverId] = rp.avatar_url;
+          threadReceiverAvatar = rp.avatar_url;
+          // patch avatar images without re-rendering everything
+          wrap.querySelectorAll('.their-avatar').forEach(el => {
+            el.outerHTML = `<img src="${rp.avatar_url}" class="their-avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0" />`;
+          });
+        }
+      });
   }
-  // fetch avatar + only new messages in background (no await)
-  (async () => {
-    const { data: rp } = await sb.from('profiles').select('avatar_url').eq('id', threadReceiverId).single();
-    threadReceiverAvatar = rp?.avatar_url || null;
-    await loadMessages(!!lastMessageId); // appendOnly if we have cache
-  })();
-  // realtime subscription for this thread
+  // realtime subscription
   if (threadInterval) { threadInterval.unsubscribe(); }
   threadInterval = sb.channel(`thread-${currentUser.id}-${threadReceiverId}`)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
       const m = payload.new;
-      // only append for messages from the OTHER person — own messages already shown optimistically
       if (m.sender_id === threadReceiverId && m.receiver_id === currentUser.id) {
-        loadMessages(true);
+        appendBubble(m, wrap);
+        lastMessageTimestamp = m.created_at;
       } else if (m.sender_id === currentUser.id && m.receiver_id === threadReceiverId) {
-        // update lastMessageId so next append query is correct
-        lastMessageId = m.id;
+        lastMessageTimestamp = m.created_at;
       }
     })
     .subscribe();
@@ -1285,9 +1363,10 @@ function renderBubble(m) {
     : m.content;
   const avatarUrl = mine ? myAvatar : threadReceiverAvatar;
   const avatarLetter = mine ? myName[0].toUpperCase() : m.sender_name[0].toUpperCase();
+  const avatarClass = mine ? '' : 'their-avatar';
   const avatarEl = avatarUrl
-    ? `<img src="${avatarUrl}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
-    : `<div style="width:28px;height:28px;border-radius:50%;background:var(--t400);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">${avatarLetter}</div>`;
+    ? `<img src="${avatarUrl}" class="${avatarClass}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
+    : `<div class="${avatarClass}" style="width:28px;height:28px;border-radius:50%;background:var(--t400);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">${avatarLetter}</div>`;
   return `<div style="display:flex;align-items:flex-end;gap:8px;flex-direction:${mine ? 'row-reverse' : 'row'};width:100%">
     ${avatarEl}
     <div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'};flex:1;min-width:0">
@@ -1297,37 +1376,38 @@ function renderBubble(m) {
   </div>`;
 }
 
-let lastMessageId = null;
+const avatarCache = {}; // userId → avatarUrl (in-memory, populated by preloadChatData)
+let lastMessageTimestamp = null;
 
-async function loadMessages(appendOnly = false) {
+// fetch only messages newer than what's cached, append them — no full re-render
+async function loadNewMessages() {
   if (!threadReceiverId) return;
   const wrap = document.getElementById('thread-messages');
   const msgCacheKey = `msgs_${threadReceiverId}`;
-
   let query = sb.from('messages').select('*')
     .in('sender_id', [currentUser.id, threadReceiverId])
     .in('receiver_id', [currentUser.id, threadReceiverId])
     .order('created_at', { ascending: true });
-  // if we already showed cache, only fetch NEW messages
-  if (appendOnly && lastMessageId) query = query.gt('id', lastMessageId);
+  if (lastMessageTimestamp) query = query.gt('created_at', lastMessageTimestamp);
   const { data } = await query;
   if (!data || !data.length) {
-    if (!appendOnly) wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
+    if (!lastMessageTimestamp) wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
     return;
   }
-  lastMessageId = data[data.length - 1].id;
-  if (appendOnly) {
-    // re-render with fresh avatars (in case avatar wasn't loaded when cache was shown)
-    const local = lsLoad(msgCacheKey) || [];
-    const merged = [...local.filter(m => !data.find(d => d.id === m.id)), ...data];
-    merged.sort((a, b) => a.id > b.id ? 1 : -1);
-    wrap.innerHTML = merged.map(renderBubble).join('');
-    lsSave(msgCacheKey, merged);
-  } else {
-    wrap.innerHTML = data.map(renderBubble).join('');
-    lsSave(msgCacheKey, data);
-  }
+  lastMessageTimestamp = data[data.length - 1].created_at;
+  // append only — never re-render existing messages
+  data.forEach(m => appendBubble(m, wrap));
   wrap.scrollTop = wrap.scrollHeight;
+  // update localStorage cache
+  const local = lsLoad(msgCacheKey) || [];
+  const newIds = new Set(data.map(m => m.id));
+  lsSave(msgCacheKey, [...local.filter(m => !newIds.has(m.id)), ...data]);
+}
+
+function appendBubble(m, wrap) {
+  const div = document.createElement('div');
+  div.innerHTML = renderBubble(m);
+  wrap.appendChild(div.firstElementChild);
 }
 
 async function sendMessage() {
@@ -1490,7 +1570,7 @@ async function sendPhoto(input) {
     const myName = currentProfile?.name || currentUser.email.split('@')[0];
     const content = `📷 [Photo]\n${e.target.result}`;
     await sb.from('messages').insert({ sender_id: currentUser.id, receiver_id: threadReceiverId, sender_name: myName, content, request_id: threadRequestId });
-    await loadMessages();
+    await loadNewMessages();
   };
   reader.readAsDataURL(file);
 }
