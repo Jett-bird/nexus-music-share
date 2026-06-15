@@ -326,7 +326,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.82</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.83</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -1292,27 +1292,46 @@ function renderOutgoing() {
 
 async function renderChat() { await renderIncoming(); await renderOutgoing(); }
 
+const _respondingReqs = new Set();
 async function respondRequest(reqId, listingId, status, borrowerId) {
-  const { error } = await sb.from('requests').update({ status }).eq('id', reqId);
-  if (error) { showToast('toast-home', 'Could not update request', true); return; }
-  if (status === 'accepted') {
-    await sb.from('listings').update({ available: false, status: 'on_loan' }).eq('id', listingId);
-    const item = allListings.find(l => l.id === listingId);
-    if (item) { item.available = false; item.status = 'on_loan'; }
-    renderBrowse(); updateStats();
-    // send auto message to borrower
-    const myName = currentProfile?.name || currentUser.email.split('@')[0];
-    await sb.from('messages').insert({ sender_id: currentUser.id, receiver_id: borrowerId, sender_name: myName, content: '✅ Your request has been accepted! Please arrange pickup with me.', request_id: reqId });
+  if (_respondingReqs.has(reqId)) return; // prevent double-click
+  _respondingReqs.add(reqId);
+  try {
+    // Run request + listing updates in parallel
+    const ops = [sb.from('requests').update({ status }).eq('id', reqId)];
+    if (status === 'accepted') ops.push(sb.from('listings').update({ available: false, status: 'on_loan' }).eq('id', listingId));
+    const [reqRes] = await Promise.all(ops);
+    if (reqRes.error) { showToast('toast-home', 'Could not update request', true); return; }
+
+    // Optimistic local update
+    if (status === 'accepted') {
+      const item = allListings.find(l => l.id === listingId);
+      if (item) { item.available = false; item.status = 'on_loan'; }
+      renderBrowse(); updateStats();
+      // Send auto-message in background (fire & forget — only once, guard prevents duplicates)
+      const myName = currentProfile?.name || currentUser.email.split('@')[0];
+      sb.from('messages').insert({ sender_id: currentUser.id, receiver_id: borrowerId, sender_name: myName, content: '✅ Your request has been accepted! Please arrange pickup with me.', request_id: reqId });
+    }
+
+    // Update local request cache immediately without waiting for full preload
+    const list = status === 'accepted' ? cachedRequests.incoming : cachedRequests.incoming;
+    if (cachedRequests.incoming) {
+      const r = cachedRequests.incoming.find(r => r.id === reqId);
+      if (r) r.status = status;
+    }
+    renderIncoming(); renderOutgoing();
+    showToast('toast-home', status === 'accepted' ? 'Request accepted!' : 'Request declined');
+    preloadChatData(); // background refresh, no await
+  } finally {
+    _respondingReqs.delete(reqId);
   }
-  await preloadChatData();
-  renderIncoming(); renderOutgoing();
-  showToast('toast-home', status === 'accepted' ? 'Request accepted!' : 'Request declined');
 }
 
 /* ── thread ── */
 let threadReceiverId = null;
 let threadRequestId = null;
 let threadInterval = null;
+let threadPollInterval = null;
 let threadReceiverAvatar = null;
 let isSending = false;
 const threadMap = {}; // key → {receiverId, receiverName, subject, reqId}
@@ -1394,16 +1413,25 @@ async function openThread(receiverId, receiverName, subject, reqId) {
       const m = payload.new;
       if (m.sender_id === threadReceiverId && m.receiver_id === currentUser.id) {
         appendBubble(m, wrap);
+        wrap.scrollTop = wrap.scrollHeight;
         lastMessageTimestamp = m.created_at;
       } else if (m.sender_id === currentUser.id && m.receiver_id === threadReceiverId) {
         lastMessageTimestamp = m.created_at;
       }
     })
     .subscribe();
+
+  // polling fallback every 5s (catches messages if realtime websocket drops)
+  if (threadPollInterval) clearInterval(threadPollInterval);
+  threadPollInterval = setInterval(() => {
+    if (document.getElementById('screen-thread').style.display === 'flex') loadNewMessages();
+    else { clearInterval(threadPollInterval); threadPollInterval = null; }
+  }, 5000);
 }
 
 function closeThread() {
   if (threadInterval) { threadInterval.unsubscribe(); threadInterval = null; }
+  if (threadPollInterval) { clearInterval(threadPollInterval); threadPollInterval = null; }
   document.getElementById('screen-thread').style.display = 'none';
 }
 
@@ -1659,7 +1687,7 @@ function startRealtime() {
       const m = payload.new;
       const threadOpen = document.getElementById('screen-thread').style.display === 'flex';
       if (threadOpen && m.sender_id === threadReceiverId) {
-        loadMessages();
+        loadNewMessages();
       } else {
         unreadMessages++;
         showChatDot(true);
