@@ -8,9 +8,8 @@
 <link rel="preconnect" href="https://kbhbpqtggujotmejmzkt.supabase.co" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -190,15 +189,18 @@ textarea.form-input{resize:vertical;min-height:80px}
 .back-header{background:var(--t800);padding:0 1.25rem;display:flex;align-items:center;gap:12px;height:52px}
 .back-btn{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.8);font-size:20px;padding:4px;line-height:1;display:flex;align-items:center}
 .back-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff}
+.spin{animation:spin 1s linear infinite}
+.loader-icon{width:24px;height:24px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite}
+.icon-t400{color:var(--t400)}
 </style>
 </head>
 <body>
 <div class="app">
 
 <!-- ═══════ SPLASH ═══════ -->
-<div id="screen-splash" class="screen active splash-screen">
+  <div id="screen-splash" class="screen active splash-screen">
   <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff">Nexus Music <span style="color:var(--t200)">Share</span></div>
-  <i class="ti ti-loader-2" style="font-size:24px;color:rgba(255,255,255,0.4);animation:spin 1s linear infinite"></i>
+  <div class="loader-icon" style="margin-top:16px"></div>
   <div id="splash-msg" style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px"></div>
 </div>
 
@@ -221,7 +223,7 @@ textarea.form-input{resize:vertical;min-height:80px}
         <input class="form-input" type="password" placeholder="••••••••" id="login-pw" autocomplete="new-password" />
       </div>
       <button class="btn-primary" id="login-btn" onclick="doLogin()">
-        Sign In <i class="ti ti-arrow-right"></i>
+        Sign In ${i('arrow-right', 18)}
       </button>
       <div class="divider">or</div>
       <button class="btn-google" onclick="doGoogleLogin()">
@@ -240,7 +242,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <div id="screen-register" class="screen">
   <div class="back-header">
     <button class="back-btn" onclick="showScreen('screen-login')" aria-label="Back">
-      <i class="ti ti-arrow-left"></i>
+      ${i('arrow-left', 20)}
     </button>
     <div class="back-title">Create Account</div>
   </div>
@@ -278,7 +280,7 @@ textarea.form-input{resize:vertical;min-height:80px}
         <input class="form-input" type="password" placeholder="Re-enter your password" id="reg-pw2" />
       </div>
       <button class="btn-primary" id="reg-btn" onclick="doRegister()">
-        Create Account <i class="ti ti-check"></i>
+        Create Account ${i('check', 18)}
       </button>
       <div class="auth-switch">Already have an account? <a onclick="showScreen('screen-login')">Sign in</a></div>
     </div>
@@ -316,7 +318,7 @@ textarea.form-input{resize:vertical;min-height:80px}
         </select>
       </div>
       <button class="btn-primary" id="cp-btn" onclick="completeProfile()">
-        Get Started <i class="ti ti-arrow-right"></i>
+        Get Started ${i('arrow-right', 18)}
       </button>
     </div>
   </div>
@@ -326,7 +328,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.73</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.75</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -344,28 +346,28 @@ textarea.form-input{resize:vertical;min-height:80px}
       <div><div class="hs-num" id="stat-avail">—</div><div class="hs-lbl">Available</div></div>
       <div><div class="hs-num" id="stat-users">—</div><div class="hs-lbl">Members</div></div>
     </div>
-    <div class="hero-deco">🎻🎹🎺🥁🪈</div>
+    <div class="hero-deco">🎻🎹🎺🥁🎷</div>
   </div>
 
   <div class="tab-content-wrap">
   <div class="tabs">
     <div class="tab active" id="tab-btn-browse" onclick="switchTab('browse')">
-      <i class="ti ti-search"></i>Browse
+      ${i('search', 20)}Browse
     </div>
     <div class="tab" id="tab-btn-mylist" onclick="switchTab('mylist')">
-      <i class="ti ti-music"></i>My Listings
+      ${i('music', 20)}My Listings
     </div>
     <div class="tab" id="tab-btn-chat" onclick="switchTab('chat')" onpointerenter="preloadChatData()">
       <div style="position:relative;display:inline-block">
-        <i class="ti ti-message"></i>
+        ${i('message', 20)}
         <span id="chat-dot" style="display:none;position:absolute;top:-2px;right:-4px;width:8px;height:8px;background:#e53e3e;border-radius:50%;border:1.5px solid var(--surface)"></span>
       </div>Chat
     </div>
     <div class="tab" id="tab-btn-apply" onclick="switchTab('apply')">
-      <i class="ti ti-file-description"></i>Requests
+      ${i('file-description', 20)}Requests
     </div>
     <div class="tab" id="tab-btn-account" onclick="switchTab('account')">
-      <i class="ti ti-user-circle"></i>Account
+      ${i('user-circle', 20)}Account
     </div>
   </div>
 
@@ -374,39 +376,39 @@ textarea.form-input{resize:vertical;min-height:80px}
     <div class="search-row">
       <input type="text" placeholder="Search by name or category…" id="search-inp" />
       <button class="search-btn" onclick="renderBrowse()" aria-label="Search">
-        <i class="ti ti-search"></i>
+        ${i('search', 15)}
       </button>
     </div>
     <div class="pills" id="filter-pills">
       <div class="pill active" onclick="setFilter(this,'All')">All</div>
       <div class="pill" onclick="setFilter(this,'Strings')">🎻 Strings</div>
       <div class="pill" onclick="setFilter(this,'Keyboard')">🎹 Keyboard</div>
-      <div class="pill" onclick="setFilter(this,'Woodwind')">🪈 Woodwind</div>
+      <div class="pill" onclick="setFilter(this,'Woodwind')">🎷 Woodwind</div>
       <div class="pill" onclick="setFilter(this,'Brass')">🎺 Brass</div>
       <div class="pill" onclick="setFilter(this,'Percussion')">🥁 Percussion</div>
     </div>
     <div class="cards-grid" id="browse-grid"></div>
     <div class="fab">
       <button class="fab-btn" onclick="openOverlay('ov-post')">
-        <i class="ti ti-plus"></i> List My Instrument
+        ${i('plus', 16)} List My Instrument
       </button>
     </div>
   </div>
 
   <!-- my listings tab -->
   <div id="tab-mylist" style="display:none">
-    <div class="sec-header"><i class="ti ti-music"></i> Instruments I'm Lending</div>
+    <div class="sec-header">${i('music', 16)} Instruments I'm Lending</div>
     <div class="my-listings" id="my-listings-wrap"></div>
     <div class="fab" style="padding-bottom:0">
       <button class="fab-btn" onclick="openOverlay('ov-post')">
-        <i class="ti ti-plus"></i> Add Another Listing
+        ${i('plus', 16)} Add Another Listing
       </button>
     </div>
   </div>
 
   <!-- chat tab -->
   <div id="tab-chat" style="display:none">
-    <div class="sec-header"><i class="ti ti-message"></i> Messages</div>
+    <div class="sec-header">${i('message', 16)} Messages</div>
     <div class="my-listings" id="chat-conversations"></div>
   </div>
 
@@ -414,9 +416,9 @@ textarea.form-input{resize:vertical;min-height:80px}
 
   <!-- apply tab -->
   <div id="tab-apply" style="display:none">
-    <div class="sec-header"><i class="ti ti-inbox"></i> Incoming Requests</div>
+    <div class="sec-header">${i('inbox', 16)} Incoming Requests</div>
     <div class="my-listings" id="chat-incoming"></div>
-    <div class="sec-header" style="margin-top:4px"><i class="ti ti-send"></i> My Requests</div>
+    <div class="sec-header" style="margin-top:4px">${i('send', 16)} My Requests</div>
     <div class="my-listings" id="chat-outgoing"></div>
   </div>
 
@@ -456,7 +458,7 @@ textarea.form-input{resize:vertical;min-height:80px}
     </div>
     <div style="padding:1rem 1.25rem 0">
       <button class="fab-btn" style="background:var(--c600)" onclick="doLogout()">
-        <i class="ti ti-logout"></i> Sign Out
+        ${i('logout', 18)} Sign Out
       </button>
     </div>
   </div>
@@ -478,9 +480,9 @@ textarea.form-input{resize:vertical;min-height:80px}
     <div class="form-label" style="margin-bottom:8px">Select rental dates (click a start and end date)</div>
     <div class="cal-wrap">
       <div class="cal-nav">
-        <button class="cal-nav-btn" onclick="calNav(-1)" aria-label="Previous month"><i class="ti ti-chevron-left"></i></button>
+        <button class="cal-nav-btn" onclick="calNav(-1)" aria-label="Previous month">${i('chevron-left', 18)}</button>
         <div class="cal-month-lbl" id="cal-month-lbl"></div>
-        <button class="cal-nav-btn" onclick="calNav(1)" aria-label="Next month"><i class="ti ti-chevron-right"></i></button>
+        <button class="cal-nav-btn" onclick="calNav(1)" aria-label="Next month">${i('chevron-right', 18)}</button>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
@@ -495,7 +497,7 @@ textarea.form-input{resize:vertical;min-height:80px}
       </div>
     </div>
     <button class="btn-primary" style="margin-top:12px" onclick="confirmRent()">
-      Confirm Booking <i class="ti ti-check"></i>
+      Confirm Booking ${i('check', 18)}
     </button>
   </div>
 </div>
@@ -580,7 +582,7 @@ textarea.form-input{resize:vertical;min-height:80px}
       <textarea class="form-input" placeholder="Accessories included, extra details…" id="p-desc"></textarea>
     </div>
     <button class="btn-primary" id="post-btn" onclick="submitPost()">
-      Publish Listing <i class="ti ti-arrow-right"></i>
+      Publish Listing
     </button>
   </div>
 </div>
@@ -598,7 +600,33 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   }
 });
 
-const EMOJIS = { Strings:'🎻', Keyboard:'🎹', Woodwind:'🪈', Brass:'🎺', Percussion:'🥁', Other:'🎵' };
+const EMOJIS = { Strings:'🎻', Keyboard:'🎹', Woodwind:'🎷', Brass:'🎺', Percussion:'🥁', Other:'🎵' };
+const SVG = {
+  'loader-2': '<path d="M12 3a9 9 0 1 0 9 9" />',
+  'search': '<path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" />',
+  'music': '<path d="M3 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M13 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M9 17v-13h10v13" /><path d="M9 8h10" />',
+  'message': '<path d="M8 9h8" /><path d="M8 13h6" /><path d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12z" />',
+  'file-description': '<path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 17h6" /><path d="M9 13h6" />',
+  'user-circle': '<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -14 0" /><path d="M12 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855" />',
+  'plus': '<path d="M12 5l0 14" /><path d="M5 12l14 0" />',
+  'trash': '<path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />',
+  'camera': '<path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M9 13a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />',
+  'send': '<path d="M10 14l11 -11" /><path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5" />',
+  'logout': '<path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" /><path d="M9 12h12l-3 -3" /><path d="M18 15l3 -3" />',
+  'arrow-right': '<path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" />',
+  'arrow-left': '<path d="M5 12l14 0" /><path d="M5 12l6 6" /><path d="M5 12l6 -6" />',
+  'chevron-left': '<path d="M15 6l-6 6l6 6" />',
+  'chevron-right': '<path d="M9 6l6 6l-6 6" />',
+  'check': '<path d="M5 12l5 5l10 -10" />',
+  'inbox': '<path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /><path d="M4 13h3l3 3h4l3 -3h3" />',
+  'mood-empty': '<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 10l.01 0" /><path d="M15 10l.01 0" /><path d="M9 15l6 0" />',
+  'message-off': '<path d="M8 9h1" /><path d="M8 13h6" /><path d="M18 4a3 3 0 0 1 3 3v8c0 .564 -.155 1.092 -.423 1.542m-3.232 .711l-2.345 -.253l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 2.066 -2.843" /><path d="M3 3l18 18" />',
+  'user': '<path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />'
+};
+function i(name, size=24, cls='') {
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">${SVG[name] || ''}</svg>`;
+}
+
 const BG = ['bg-t','bg-a','bg-c','bg-g'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DOWS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -616,6 +644,17 @@ let selStart = null, selEnd = null;
 
 /* ── init: check existing session ── */
 async function init() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+  
+  // 1. Optimistic Launch: Use cached profile/session hint if available
+  const cachedProfile = lsLoad('profile');
+  if (cachedProfile) {
+    currentProfile = cachedProfile;
+    enterHome();
+  }
+
   // listen for auth changes (handles OAuth redirects + token refresh)
   sb.auth.onAuthStateChange(async (event, session) => {
     // only handle Google OAuth redirect (not email/password login)
@@ -650,7 +689,10 @@ async function init() {
 
 async function loadProfile() {
   const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  currentProfile = data;
+  if (data) {
+    currentProfile = data;
+    lsSave('profile', data);
+  }
 }
 
 /* ── screens ── */
@@ -733,7 +775,7 @@ async function doLogout() {
   document.getElementById('login-pw').value = '';
   const btn = document.getElementById('login-btn');
   btn.disabled = false;
-  btn.innerHTML = 'Sign In <i class="ti ti-arrow-right"></i>';
+  btn.innerHTML = `Sign In ${i('arrow-right', 18)}`;
   showScreen('screen-login');
 }
 
@@ -914,7 +956,7 @@ function renderBrowse() {
   });
   const grid = document.getElementById('browse-grid');
   if (!data.length) {
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="ti ti-mood-empty"></i>No instruments found</div>';
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">' + i('mood-empty', 36) + 'No instruments found</div>';
     return;
   }
   grid.innerHTML = data.map((item, idx) => `
@@ -922,7 +964,7 @@ function renderBrowse() {
       <div class="icard-img ${BG[idx % 4]}">${EMOJIS[item.cat] || '🎵'}</div>
       <div class="icard-body">
         <div class="icard-name">${item.name}</div>
-        <div class="icard-owner"><i class="ti ti-user" style="font-size:11px"></i> ${item.owner_name}</div>
+        <div class="icard-owner">${i('user', 11)} ${item.owner_name}</div>
         <div class="icard-foot">
           <div class="price">$${item.price}<span>/wk</span></div>
           <div class="badge ${statusBadgeClass(item)}">${statusLabel(item)}</div>
@@ -973,7 +1015,7 @@ async function renderMyListings() {
   const wrap = document.getElementById('my-listings-wrap');
   if (!wrap) return;
   if (!mine.length) {
-    wrap.innerHTML = '<div class="empty-state"><i class="ti ti-mood-empty"></i>No listings yet<br>Tap the button below to post your first instrument</div>';
+    wrap.innerHTML = '<div class="empty-state">' + i('mood-empty', 36) + 'No listings yet<br>Tap the button below to post your first instrument</div>';
     return;
   }
 
@@ -995,7 +1037,7 @@ async function renderMyListings() {
           <div class="listing-meta">${metaLine}</div>
         </div>
         <button class="badge ${statusBadgeClass(item)}" onclick="openAvailabilityModal('${item.id}')" style="border:none;cursor:pointer" title="Change availability">${statusLabel(item)}</button>
-        ${status !== 'on_loan' ? `<button class="badge badge-del" onclick="deleteListing('${item.id}')" title="Remove listing"><i class="ti ti-trash"></i> Delete</button>` : ''}
+        ${status !== 'on_loan' ? `<button class="badge badge-del" onclick="deleteListing('${item.id}')" title="Remove listing">${i('trash', 14)} Delete</button>` : ''}
       </div>`;
     }).join('');
   };
@@ -1163,7 +1205,7 @@ async function renderMyRent() {
   const { data } = await sb.from('requests').select('*').eq('borrower_id', currentUser.id).eq('status', 'accepted').order('created_at', { ascending: false });
   const wrap = document.getElementById('my-rent-wrap');
   if (!data || !data.length) {
-    wrap.innerHTML = '<div class="empty-state"><i class="ti ti-mood-empty"></i>No active rentals yet</div>';
+    wrap.innerHTML = '<div class="empty-state">' + i('mood-empty', 36) + 'No active rentals yet</div>';
     return;
   }
   wrap.innerHTML = data.map(r => `
@@ -1173,7 +1215,7 @@ async function renderMyRent() {
         <div class="listing-name">${r.instrument_name}</div>
         <div class="listing-meta">${r.start_date} → ${r.end_date} · ${r.fee}</div>
       </div>
-      <i class="ti ti-message" style="color:var(--t400);font-size:18px"></i>
+      ${i('message', 18, 'icon-t400')}
     </div>`).join('');
 }
 
@@ -1197,7 +1239,7 @@ function reqCard(r, isIncoming, ownerName) {
     </div>` : ''}
     <div style="margin-top:8px">
       <button class="req-accept" style="width:auto;padding:7px 16px;font-size:12px" onclick="openThreadByKey('${msgKey}')">
-        <i class="ti ti-message"></i> Message
+        ${i('message', 14)} Message
       </button>
     </div>
   </div>`;
@@ -1219,8 +1261,8 @@ async function renderConversations() {
 }
 
 function renderConversationsFromCache(wrap) {
-  if (!cachedConversations) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div>'; return; }
-  if (!cachedConversations.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-message-off"></i>No conversations yet</div>'; return; }
+  if (!cachedConversations) { wrap.innerHTML = '<div class="empty-state">' + i('loader-2', 36, 'spin') + '</div>'; return; }
+  if (!cachedConversations.length) { wrap.innerHTML = '<div class="empty-state">' + i('message-off', 36) + 'No conversations yet</div>'; return; }
   wrap.innerHTML = cachedConversations.map(c => {
     const preview = c.lastMsg.startsWith('📷') ? '📷 Photo' : c.lastMsg.slice(0, 40) + (c.lastMsg.length > 40 ? '…' : '');
     const time = new Date(c.time).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
@@ -1330,7 +1372,7 @@ async function openThread(receiverId, receiverName, subject, reqId) {
     wrap.innerHTML = local.map(renderBubble).join('');
     lastMessageTimestamp = local[local.length - 1].created_at;
   } else {
-    wrap.innerHTML = '<div class="empty-state"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div>';
+    wrap.innerHTML = '<div class="empty-state">' + i('loader-2', 36, 'spin') + '</div>';
   }
 
   document.getElementById('thread-title').textContent = `${receiverName}${subject ? ' · ' + subject : ''}`;
@@ -1517,17 +1559,17 @@ function showToast(id, msg, isError = false) {
 
 /* ── button loading state ── */
 const btnLabels = {
-  'login-btn': 'Sign In <i class="ti ti-arrow-right"></i>',
-  'reg-btn': 'Create Account <i class="ti ti-check"></i>',
-  'cp-btn': 'Get Started <i class="ti ti-arrow-right"></i>',
-  'post-btn': 'Publish Listing <i class="ti ti-arrow-right"></i>'
+  'login-btn': `Sign In ${i('arrow-right', 18)}`,
+  'reg-btn': `Create Account ${i('check', 18)}`,
+  'cp-btn': `Get Started ${i('arrow-right', 18)}`,
+  'post-btn': `Publish Listing ${i('arrow-right', 18)}`
 };
 function setLoading(btnId, loading) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
   btn.disabled = loading;
   btn.innerHTML = loading
-    ? '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>'
+    ? i('loader-2', 18, 'spin')
     : (btnLabels[btnId] || btn.dataset.label || btn.textContent);
 }
 
@@ -1658,17 +1700,17 @@ init().then(() => { loadMemberCount(); startRealtime(); });
 <!-- ═══════ CHAT THREAD ═══════ -->
 <div id="screen-thread" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:200;display:none;flex-direction:column">
   <div class="back-header">
-    <button class="back-btn" onclick="closeThread()"><i class="ti ti-arrow-left"></i></button>
+    <button class="back-btn" onclick="closeThread()">${i('arrow-left', 20)}</button>
     <div class="back-title" id="thread-title">Chat</div>
   </div>
   <div id="thread-messages" style="flex:1;overflow-y:auto;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:10px;padding-bottom:80px;width:100%;box-sizing:border-box"></div>
   <div style="position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-top:0.5px solid var(--border);padding:10px 1.25rem;display:flex;gap:8px;align-items:center">
     <label style="cursor:pointer;color:var(--muted);font-size:22px;line-height:1;padding:4px" title="Send photo">
-      <i class="ti ti-camera"></i>
+      ${i('camera', 22)}
       <input type="file" accept="image/*" capture="environment" id="photo-input" style="display:none" onchange="sendPhoto(this)" />
     </label>
     <input class="form-input" type="text" placeholder="Type a message…" id="msg-input" style="flex:1" />
-    <button class="search-btn" onclick="sendMessage()"><i class="ti ti-send"></i></button>
+    <button class="search-btn" onclick="sendMessage()">${i('send', 18)}</button>
   </div>
 </div>
 </body>
