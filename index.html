@@ -8,8 +8,9 @@
 <link rel="preconnect" href="https://kbhbpqtggujotmejmzkt.supabase.co" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -189,18 +190,15 @@ textarea.form-input{resize:vertical;min-height:80px}
 .back-header{background:var(--t800);padding:0 1.25rem;display:flex;align-items:center;gap:12px;height:52px}
 .back-btn{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.8);font-size:20px;padding:4px;line-height:1;display:flex;align-items:center}
 .back-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff}
-.spin{animation:spin 1s linear infinite}
-.loader-icon{width:24px;height:24px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite}
-.icon-t400{color:var(--t400)}
 </style>
 </head>
 <body>
 <div class="app">
 
 <!-- ═══════ SPLASH ═══════ -->
-  <div id="screen-splash" class="screen active splash-screen">
+<div id="screen-splash" class="screen active splash-screen">
   <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#fff">Nexus Music <span style="color:var(--t200)">Share</span></div>
-  <div class="loader-icon" style="margin-top:16px"></div>
+  <i class="ti ti-loader-2" style="font-size:24px;color:rgba(255,255,255,0.4);animation:spin 1s linear infinite"></i>
   <div id="splash-msg" style="font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px"></div>
 </div>
 
@@ -223,7 +221,7 @@ textarea.form-input{resize:vertical;min-height:80px}
         <input class="form-input" type="password" placeholder="••••••••" id="login-pw" autocomplete="new-password" />
       </div>
       <button class="btn-primary" id="login-btn" onclick="doLogin()">
-        Sign In ${i('arrow-right', 18)}
+        Sign In <i class="ti ti-arrow-right"></i>
       </button>
       <div class="divider">or</div>
       <button class="btn-google" onclick="doGoogleLogin()">
@@ -242,7 +240,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <div id="screen-register" class="screen">
   <div class="back-header">
     <button class="back-btn" onclick="showScreen('screen-login')" aria-label="Back">
-      ${i('arrow-left', 20)}
+      <i class="ti ti-arrow-left"></i>
     </button>
     <div class="back-title">Create Account</div>
   </div>
@@ -280,7 +278,7 @@ textarea.form-input{resize:vertical;min-height:80px}
         <input class="form-input" type="password" placeholder="Re-enter your password" id="reg-pw2" />
       </div>
       <button class="btn-primary" id="reg-btn" onclick="doRegister()">
-        Create Account ${i('check', 18)}
+        Create Account <i class="ti ti-check"></i>
       </button>
       <div class="auth-switch">Already have an account? <a onclick="showScreen('screen-login')">Sign in</a></div>
     </div>
@@ -318,7 +316,7 @@ textarea.form-input{resize:vertical;min-height:80px}
         </select>
       </div>
       <button class="btn-primary" id="cp-btn" onclick="completeProfile()">
-        Get Started ${i('arrow-right', 18)}
+        Get Started <i class="ti ti-arrow-right"></i>
       </button>
     </div>
   </div>
@@ -328,7 +326,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.75</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.81</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -346,28 +344,28 @@ textarea.form-input{resize:vertical;min-height:80px}
       <div><div class="hs-num" id="stat-avail">—</div><div class="hs-lbl">Available</div></div>
       <div><div class="hs-num" id="stat-users">—</div><div class="hs-lbl">Members</div></div>
     </div>
-    <div class="hero-deco">🎻🎹🎺🥁🎷</div>
+    <div class="hero-deco">🎻🎹🎺🥁🪈</div>
   </div>
 
   <div class="tab-content-wrap">
   <div class="tabs">
     <div class="tab active" id="tab-btn-browse" onclick="switchTab('browse')">
-      ${i('search', 20)}Browse
+      <i class="ti ti-search"></i>Browse
     </div>
     <div class="tab" id="tab-btn-mylist" onclick="switchTab('mylist')">
-      ${i('music', 20)}My Listings
+      <i class="ti ti-music"></i>My Listings
     </div>
     <div class="tab" id="tab-btn-chat" onclick="switchTab('chat')" onpointerenter="preloadChatData()">
       <div style="position:relative;display:inline-block">
-        ${i('message', 20)}
+        <i class="ti ti-message"></i>
         <span id="chat-dot" style="display:none;position:absolute;top:-2px;right:-4px;width:8px;height:8px;background:#e53e3e;border-radius:50%;border:1.5px solid var(--surface)"></span>
-      </div>Chat
+      </div>消息
     </div>
     <div class="tab" id="tab-btn-apply" onclick="switchTab('apply')">
-      ${i('file-description', 20)}Requests
+      <i class="ti ti-file-description"></i>Requests
     </div>
     <div class="tab" id="tab-btn-account" onclick="switchTab('account')">
-      ${i('user-circle', 20)}Account
+      <i class="ti ti-user-circle"></i>Account
     </div>
   </div>
 
@@ -376,39 +374,39 @@ textarea.form-input{resize:vertical;min-height:80px}
     <div class="search-row">
       <input type="text" placeholder="Search by name or category…" id="search-inp" />
       <button class="search-btn" onclick="renderBrowse()" aria-label="Search">
-        ${i('search', 15)}
+        <i class="ti ti-search"></i>
       </button>
     </div>
     <div class="pills" id="filter-pills">
       <div class="pill active" onclick="setFilter(this,'All')">All</div>
       <div class="pill" onclick="setFilter(this,'Strings')">🎻 Strings</div>
       <div class="pill" onclick="setFilter(this,'Keyboard')">🎹 Keyboard</div>
-      <div class="pill" onclick="setFilter(this,'Woodwind')">🎷 Woodwind</div>
+      <div class="pill" onclick="setFilter(this,'Woodwind')">🪈 Woodwind</div>
       <div class="pill" onclick="setFilter(this,'Brass')">🎺 Brass</div>
       <div class="pill" onclick="setFilter(this,'Percussion')">🥁 Percussion</div>
     </div>
     <div class="cards-grid" id="browse-grid"></div>
     <div class="fab">
       <button class="fab-btn" onclick="openOverlay('ov-post')">
-        ${i('plus', 16)} List My Instrument
+        <i class="ti ti-plus"></i> List My Instrument
       </button>
     </div>
   </div>
 
   <!-- my listings tab -->
   <div id="tab-mylist" style="display:none">
-    <div class="sec-header">${i('music', 16)} Instruments I'm Lending</div>
+    <div class="sec-header"><i class="ti ti-music"></i> Instruments I'm Lending</div>
     <div class="my-listings" id="my-listings-wrap"></div>
     <div class="fab" style="padding-bottom:0">
       <button class="fab-btn" onclick="openOverlay('ov-post')">
-        ${i('plus', 16)} Add Another Listing
+        <i class="ti ti-plus"></i> Add Another Listing
       </button>
     </div>
   </div>
 
   <!-- chat tab -->
   <div id="tab-chat" style="display:none">
-    <div class="sec-header">${i('message', 16)} Messages</div>
+    <div class="sec-header"><i class="ti ti-message"></i> 消息</div>
     <div class="my-listings" id="chat-conversations"></div>
   </div>
 
@@ -416,9 +414,9 @@ textarea.form-input{resize:vertical;min-height:80px}
 
   <!-- apply tab -->
   <div id="tab-apply" style="display:none">
-    <div class="sec-header">${i('inbox', 16)} Incoming Requests</div>
+    <div class="sec-header"><i class="ti ti-inbox"></i> 收到的申请</div>
     <div class="my-listings" id="chat-incoming"></div>
-    <div class="sec-header" style="margin-top:4px">${i('send', 16)} My Requests</div>
+    <div class="sec-header" style="margin-top:4px"><i class="ti ti-send"></i> 我发出的申请</div>
     <div class="my-listings" id="chat-outgoing"></div>
   </div>
 
@@ -458,7 +456,7 @@ textarea.form-input{resize:vertical;min-height:80px}
     </div>
     <div style="padding:1rem 1.25rem 0">
       <button class="fab-btn" style="background:var(--c600)" onclick="doLogout()">
-        ${i('logout', 18)} Sign Out
+        <i class="ti ti-logout"></i> Sign Out
       </button>
     </div>
   </div>
@@ -480,9 +478,9 @@ textarea.form-input{resize:vertical;min-height:80px}
     <div class="form-label" style="margin-bottom:8px">Select rental dates (click a start and end date)</div>
     <div class="cal-wrap">
       <div class="cal-nav">
-        <button class="cal-nav-btn" onclick="calNav(-1)" aria-label="Previous month">${i('chevron-left', 18)}</button>
+        <button class="cal-nav-btn" onclick="calNav(-1)" aria-label="Previous month"><i class="ti ti-chevron-left"></i></button>
         <div class="cal-month-lbl" id="cal-month-lbl"></div>
-        <button class="cal-nav-btn" onclick="calNav(1)" aria-label="Next month">${i('chevron-right', 18)}</button>
+        <button class="cal-nav-btn" onclick="calNav(1)" aria-label="Next month"><i class="ti ti-chevron-right"></i></button>
       </div>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
@@ -497,7 +495,7 @@ textarea.form-input{resize:vertical;min-height:80px}
       </div>
     </div>
     <button class="btn-primary" style="margin-top:12px" onclick="confirmRent()">
-      Confirm Booking ${i('check', 18)}
+      Confirm Booking <i class="ti ti-check"></i>
     </button>
   </div>
 </div>
@@ -582,7 +580,7 @@ textarea.form-input{resize:vertical;min-height:80px}
       <textarea class="form-input" placeholder="Accessories included, extra details…" id="p-desc"></textarea>
     </div>
     <button class="btn-primary" id="post-btn" onclick="submitPost()">
-      Publish Listing
+      Publish Listing <i class="ti ti-arrow-right"></i>
     </button>
   </div>
 </div>
@@ -600,33 +598,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   }
 });
 
-const EMOJIS = { Strings:'🎻', Keyboard:'🎹', Woodwind:'🎷', Brass:'🎺', Percussion:'🥁', Other:'🎵' };
-const SVG = {
-  'loader-2': '<path d="M12 3a9 9 0 1 0 9 9" />',
-  'search': '<path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" />',
-  'music': '<path d="M3 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M13 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M9 17v-13h10v13" /><path d="M9 8h10" />',
-  'message': '<path d="M8 9h8" /><path d="M8 13h6" /><path d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12z" />',
-  'file-description': '<path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 17h6" /><path d="M9 13h6" />',
-  'user-circle': '<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -14 0" /><path d="M12 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855" />',
-  'plus': '<path d="M12 5l0 14" /><path d="M5 12l14 0" />',
-  'trash': '<path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />',
-  'camera': '<path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M9 13a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />',
-  'send': '<path d="M10 14l11 -11" /><path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5" />',
-  'logout': '<path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" /><path d="M9 12h12l-3 -3" /><path d="M18 15l3 -3" />',
-  'arrow-right': '<path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" />',
-  'arrow-left': '<path d="M5 12l14 0" /><path d="M5 12l6 6" /><path d="M5 12l6 -6" />',
-  'chevron-left': '<path d="M15 6l-6 6l6 6" />',
-  'chevron-right': '<path d="M9 6l6 6l-6 6" />',
-  'check': '<path d="M5 12l5 5l10 -10" />',
-  'inbox': '<path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /><path d="M4 13h3l3 3h4l3 -3h3" />',
-  'mood-empty': '<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 10l.01 0" /><path d="M15 10l.01 0" /><path d="M9 15l6 0" />',
-  'message-off': '<path d="M8 9h1" /><path d="M8 13h6" /><path d="M18 4a3 3 0 0 1 3 3v8c0 .564 -.155 1.092 -.423 1.542m-3.232 .711l-2.345 -.253l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 2.066 -2.843" /><path d="M3 3l18 18" />',
-  'user': '<path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />'
-};
-function i(name, size=24, cls='') {
-  return `<svg xmlns="http://www.w3.org/2000/svg" class="${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">${SVG[name] || ''}</svg>`;
-}
-
+const EMOJIS = { Strings:'🎻', Keyboard:'🎹', Woodwind:'🪈', Brass:'🎺', Percussion:'🥁', Other:'🎵' };
 const BG = ['bg-t','bg-a','bg-c','bg-g'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DOWS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -644,23 +616,15 @@ let selStart = null, selEnd = null;
 
 /* ── init: check existing session ── */
 async function init() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  }
-  
-  // 1. Optimistic Launch: Use cached profile/session hint if available
-  const cachedProfile = lsLoad('profile');
-  if (cachedProfile) {
-    currentProfile = cachedProfile;
-    enterHome();
-  }
-
   // listen for auth changes (handles OAuth redirects + token refresh)
   sb.auth.onAuthStateChange(async (event, session) => {
     // only handle Google OAuth redirect (not email/password login)
     const isOAuth = session?.user?.app_metadata?.provider === 'google';
     if (event === 'SIGNED_IN' && session && !currentUser && isOAuth) {
       currentUser = session.user;
+      loadChatFromLocal();
+      preloadChatData();     // chat fetch starts NOW
+      preloadListings();     // listings fetch starts NOW, all parallel with loadProfile
       await loadProfile();
       if (!currentProfile) {
         showScreen('screen-complete-profile');
@@ -674,6 +638,9 @@ async function init() {
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
     currentUser = session.user;
+    loadChatFromLocal();
+    preloadChatData();     // chat fetch starts NOW
+    preloadListings();     // listings fetch starts NOW, all parallel with loadProfile
     await loadProfile();
     if (!currentProfile) {
       showScreen('screen-complete-profile');
@@ -689,10 +656,7 @@ async function init() {
 
 async function loadProfile() {
   const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  if (data) {
-    currentProfile = data;
-    lsSave('profile', data);
-  }
+  currentProfile = data;
 }
 
 /* ── screens ── */
@@ -733,6 +697,9 @@ async function doLogin() {
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
   if (error) { setLoading('login-btn', false); showToast('toast-login', 'Invalid email or password. Please try again.', true); return; }
   currentUser = data.user;
+  loadChatFromLocal();
+  preloadChatData();     // chat fetch starts NOW
+  preloadListings();     // listings fetch starts NOW, all parallel with loadProfile
   showScreen('screen-splash');
   document.getElementById('splash-msg').textContent = 'Signing in…';
   await loadProfile();
@@ -786,29 +753,26 @@ async function enterHome() {
   applyAvatars();
   history.replaceState(null, '', window.location.pathname);
   
-  // 1. Parallel Sync
-  loadChatFromLocal();
+  // Show cached data instantly (loadChatFromLocal already called in init)
   const listingsFromLocal = lsLoad('allListings');
-  if (listingsFromLocal) {
+  if (listingsFromLocal && !allListings.length) {
     allListings = listingsFromLocal;
-    renderBrowse();
-    updateStats();
   }
-  
+  renderBrowse();
+  updateStats();
   renderConversations();
-  
-  // Kick off background tasks simultaneously
+
+  // Background: preloadListings/preloadChatData may already be running or done
   Promise.all([
     preloadChatData(),
-    loadListings().then(() => {
-      lsSave('allListings', allListings);
+    preloadListings().then(() => {
       renderBrowse();
       updateStats();
+      autoExpireLoans();
     }),
     loadMemberCount()
   ]);
 
-  autoExpireLoans();
   showScreen('screen-home');
   switchTab('browse');
 }
@@ -846,11 +810,21 @@ function preloadChatData() {
   return _chatPreloadPromise;
 }
 
+let _listingsFetchedAt = 0;
+async function preloadListings() {
+  // skip if fetched within last 60 seconds
+  if (Date.now() - _listingsFetchedAt < 60000) return;
+  _listingsFetchedAt = Date.now();
+  await loadListings();
+  lsSave('allListings', allListings);
+}
+
 async function _doPreloadChatData() {
+  // Round 1: fetch messages + requests in parallel
   const [msgRes, reqInRes, reqOutRes] = await Promise.all([
     sb.from('messages').select('id,sender_id,receiver_id,sender_name,content,created_at,request_id')
       .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-      .order('created_at', { ascending: false }).limit(100),
+      .order('created_at', { ascending: false }).limit(200),
     sb.from('requests').select('*').eq('owner_id', currentUser.id).order('created_at', { ascending: false }),
     sb.from('requests').select('*').eq('borrower_id', currentUser.id).order('created_at', { ascending: false })
   ]);
@@ -859,47 +833,61 @@ async function _doPreloadChatData() {
 
   const msgs = msgRes.data || [];
   const reqs = [...cachedRequests.incoming, ...cachedRequests.outgoing];
+
+  // Compute IDs needed for round 2 immediately after round 1
   const ownerIds = [...new Set(reqs.filter(r => r.owner_id !== currentUser.id).map(r => r.owner_id))];
-  const ownerProfiles = ownerIds.length ? (await sb.from('profiles').select('id,name').in('id', ownerIds)).data || [] : [];
+  const seen = new Set();
+  for (const m of msgs) {
+    const otherId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
+    seen.add(otherId);
+  }
+  const partnerIds = [...seen];
+
+  // Round 2: only fetch avatars that aren't already cached (saves full round trip for returning users)
+  const missingAvatarIds = partnerIds.filter(id => !avatarCache[id]);
+  const [ownerProfilesRes, avatarProfilesRes] = await Promise.all([
+    ownerIds.length ? sb.from('profiles').select('id,name').in('id', ownerIds) : Promise.resolve({ data: [] }),
+    missingAvatarIds.length ? sb.from('profiles').select('id,avatar_url').in('id', missingAvatarIds) : Promise.resolve({ data: [] })
+  ]);
+
   const ownerNameMap = {};
-  ownerProfiles.forEach(p => { ownerNameMap[p.id] = p.name; });
+  (ownerProfilesRes.data || []).forEach(p => { ownerNameMap[p.id] = p.name; });
   const nameMap = {};
   reqs.forEach(r => {
     if (r.borrower_id !== currentUser.id) nameMap[r.borrower_id] = { name: r.borrower_name, subject: r.instrument_name, reqId: r.id };
     if (r.owner_id !== currentUser.id) nameMap[r.owner_id] = { name: ownerNameMap[r.owner_id] || 'Owner', subject: r.instrument_name, reqId: r.id };
   });
-  // group messages by conversation partner
-  const threadMsgs = {}; // otherId → [msgs chronological]
-  const msgsChron = [...msgs].reverse(); // msgs came desc, flip to asc
+
+  // group messages by conversation partner (chronological)
+  const threadMsgs = {};
+  const msgsChron = [...msgs].reverse();
   for (const m of msgsChron) {
     const otherId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
     if (!threadMsgs[otherId]) threadMsgs[otherId] = [];
     threadMsgs[otherId].push(m);
   }
 
-  const seen = new Set();
+  // Build conversation list
+  const seenList = new Set();
   cachedConversations = [];
   for (const m of msgs) {
     const otherId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
-    if (!seen.has(otherId)) {
-      seen.add(otherId);
+    if (!seenList.has(otherId)) {
+      seenList.add(otherId);
       const info = nameMap[otherId] || { name: m.sender_id !== currentUser.id ? m.sender_name : 'User', subject: '', reqId: m.request_id };
       cachedConversations.push({ otherId, info, lastMsg: m.content, time: m.created_at });
       threadMap[`conv-${otherId}`] = { receiverId: otherId, receiverName: info.name, subject: info.subject, reqId: info.reqId || null };
     }
   }
-  // fetch avatars for all conversation partners and cache in memory
-  const partnerIds = [...seen];
-  if (partnerIds.length) {
-    const { data: avatarProfiles } = await sb.from('profiles').select('id,avatar_url').in('id', partnerIds);
-    (avatarProfiles || []).forEach(p => { if (p.avatar_url) avatarCache[p.id] = p.avatar_url; });
-    lsSave('avatars', avatarCache);
-  }
-  // save conversations + per-thread message caches to localStorage
+
+  // Update avatar cache
+  (avatarProfilesRes.data || []).forEach(p => { if (p.avatar_url) avatarCache[p.id] = p.avatar_url; });
+  if (partnerIds.length) lsSave('avatars', avatarCache);
+
+  // Save everything to localStorage at once
   lsSave('convos', cachedConversations);
   lsSave('reqIn', cachedRequests.incoming);
   lsSave('reqOut', cachedRequests.outgoing);
-  // cache each thread's messages so openThread is instant
   Object.entries(threadMsgs).forEach(([otherId, threadMsgList]) => {
     lsSave(`msgs_${otherId}`, threadMsgList);
   });
@@ -956,7 +944,7 @@ function renderBrowse() {
   });
   const grid = document.getElementById('browse-grid');
   if (!data.length) {
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">' + i('mood-empty', 36) + 'No instruments found</div>';
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><i class="ti ti-mood-empty"></i>No instruments found</div>';
     return;
   }
   grid.innerHTML = data.map((item, idx) => `
@@ -964,7 +952,7 @@ function renderBrowse() {
       <div class="icard-img ${BG[idx % 4]}">${EMOJIS[item.cat] || '🎵'}</div>
       <div class="icard-body">
         <div class="icard-name">${item.name}</div>
-        <div class="icard-owner">${i('user', 11)} ${item.owner_name}</div>
+        <div class="icard-owner"><i class="ti ti-user" style="font-size:11px"></i> ${item.owner_name}</div>
         <div class="icard-foot">
           <div class="price">$${item.price}<span>/wk</span></div>
           <div class="badge ${statusBadgeClass(item)}">${statusLabel(item)}</div>
@@ -996,7 +984,7 @@ async function autoExpireLoans() {
     const req = reqMap[item.id];
     const endDate = req?.end_date;
     // expire: no accepted request OR end_date has passed
-    if (!endDate || endDate < today) {
+    if (!endDate || endDate <= today) {
       // update listing: only set available=true (avoids needing status column)
       await sb.from('listings').update({ available: true, status: 'available' }).eq('id', item.id);
       // also mark request as completed so it no longer blocks
@@ -1015,7 +1003,7 @@ async function renderMyListings() {
   const wrap = document.getElementById('my-listings-wrap');
   if (!wrap) return;
   if (!mine.length) {
-    wrap.innerHTML = '<div class="empty-state">' + i('mood-empty', 36) + 'No listings yet<br>Tap the button below to post your first instrument</div>';
+    wrap.innerHTML = '<div class="empty-state"><i class="ti ti-mood-empty"></i>No listings yet<br>Tap the button below to post your first instrument</div>';
     return;
   }
 
@@ -1037,7 +1025,7 @@ async function renderMyListings() {
           <div class="listing-meta">${metaLine}</div>
         </div>
         <button class="badge ${statusBadgeClass(item)}" onclick="openAvailabilityModal('${item.id}')" style="border:none;cursor:pointer" title="Change availability">${statusLabel(item)}</button>
-        ${status !== 'on_loan' ? `<button class="badge badge-del" onclick="deleteListing('${item.id}')" title="Remove listing">${i('trash', 14)} Delete</button>` : ''}
+        ${status !== 'on_loan' ? `<button class="badge badge-del" onclick="deleteListing('${item.id}')" title="Remove listing"><i class="ti ti-trash"></i> Delete</button>` : ''}
       </div>`;
     }).join('');
   };
@@ -1194,9 +1182,9 @@ async function confirmRent() {
     fee,
     status: 'pending'
   });
-  if (error) { showToast('toast-home', 'Could not send request. Please try again.', true); return; }
+  if (error) { showToast('toast-home', '申请发送失败，请重试', true); return; }
   closeOverlay('ov-rent');
-  showToast('toast-home', `Request sent to ${rentItem.owner_name}! Check Chat for updates.`);
+  showToast('toast-home', `申请已发送给 ${rentItem.owner_name}！在消息里查看进度。`);
   rentItem = null; selStart = null; selEnd = null;
 }
 
@@ -1205,7 +1193,7 @@ async function renderMyRent() {
   const { data } = await sb.from('requests').select('*').eq('borrower_id', currentUser.id).eq('status', 'accepted').order('created_at', { ascending: false });
   const wrap = document.getElementById('my-rent-wrap');
   if (!data || !data.length) {
-    wrap.innerHTML = '<div class="empty-state">' + i('mood-empty', 36) + 'No active rentals yet</div>';
+    wrap.innerHTML = '<div class="empty-state"><i class="ti ti-mood-empty"></i>No active rentals yet</div>';
     return;
   }
   wrap.innerHTML = data.map(r => `
@@ -1215,13 +1203,13 @@ async function renderMyRent() {
         <div class="listing-name">${r.instrument_name}</div>
         <div class="listing-meta">${r.start_date} → ${r.end_date} · ${r.fee}</div>
       </div>
-      ${i('message', 18, 'icon-t400')}
+      <i class="ti ti-message" style="color:var(--t400);font-size:18px"></i>
     </div>`).join('');
 }
 
 /* ── chat / requests ── */
 function reqCard(r, isIncoming, ownerName) {
-  const statusLabel = r.status.charAt(0).toUpperCase() + r.status.slice(1);
+  const statusLabel = { pending: '待审核', accepted: '已通过', declined: '已拒绝', completed: '已完成' }[r.status] || r.status;
   const msgKey = `req-${r.id}`;
   const otherId = isIncoming ? r.borrower_id : r.owner_id;
   const otherName = isIncoming ? r.borrower_name : (ownerName || 'Owner');
@@ -1231,15 +1219,15 @@ function reqCard(r, isIncoming, ownerName) {
       <div class="req-name">${r.instrument_name}</div>
       <div class="badge badge-${r.status}">${statusLabel}</div>
     </div>
-    <div class="req-meta">${isIncoming ? `From: ${r.borrower_name} (${r.borrower_email})<br>` : ''}${r.start_date} → ${r.end_date} · ${r.fee}</div>
+    <div class="req-meta">${isIncoming ? `来自: ${r.borrower_name} (${r.borrower_email})<br>` : ''}${r.start_date} → ${r.end_date} · ${r.fee}</div>
     ${isIncoming && r.status === 'pending' ? `
     <div class="req-actions">
-      <button class="req-accept" onclick="respondRequest('${r.id}','${r.listing_id}','accepted','${r.borrower_id}')">Accept</button>
-      <button class="req-decline" onclick="respondRequest('${r.id}','${r.listing_id}','declined','${r.borrower_id}')">Decline</button>
+      <button class="req-accept" onclick="respondRequest('${r.id}','${r.listing_id}','accepted','${r.borrower_id}')">通过</button>
+      <button class="req-decline" onclick="respondRequest('${r.id}','${r.listing_id}','declined','${r.borrower_id}')">拒绝</button>
     </div>` : ''}
     <div style="margin-top:8px">
       <button class="req-accept" style="width:auto;padding:7px 16px;font-size:12px" onclick="openThreadByKey('${msgKey}')">
-        ${i('message', 14)} Message
+        <i class="ti ti-message"></i> 发消息
       </button>
     </div>
   </div>`;
@@ -1261,8 +1249,8 @@ async function renderConversations() {
 }
 
 function renderConversationsFromCache(wrap) {
-  if (!cachedConversations) { wrap.innerHTML = '<div class="empty-state">' + i('loader-2', 36, 'spin') + '</div>'; return; }
-  if (!cachedConversations.length) { wrap.innerHTML = '<div class="empty-state">' + i('message-off', 36) + 'No conversations yet</div>'; return; }
+  if (!cachedConversations) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div>'; return; }
+  if (!cachedConversations.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-message-off"></i>暂无对话</div>'; return; }
   wrap.innerHTML = cachedConversations.map(c => {
     const preview = c.lastMsg.startsWith('📷') ? '📷 Photo' : c.lastMsg.slice(0, 40) + (c.lastMsg.length > 40 ? '…' : '');
     const time = new Date(c.time).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
@@ -1296,7 +1284,7 @@ function renderOutgoing() {
   if (!wrap) return;
   const data = cachedRequests.outgoing;
   if (!data) { wrap.innerHTML = ''; return; }
-  if (!data.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-send"></i>No outgoing requests</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-send"></i>暂无发出的申请</div>'; return; }
   const ownerNameMap = {};
   (cachedConversations || []).forEach(c => { ownerNameMap[c.otherId] = c.info.name; });
   wrap.innerHTML = data.map(r => reqCard(r, false, ownerNameMap[r.owner_id] || 'Owner')).join('');
@@ -1306,7 +1294,7 @@ async function renderChat() { await renderIncoming(); await renderOutgoing(); }
 
 async function respondRequest(reqId, listingId, status, borrowerId) {
   const { error } = await sb.from('requests').update({ status }).eq('id', reqId);
-  if (error) { showToast('toast-home', 'Could not update request', true); return; }
+  if (error) { showToast('toast-home', '操作失败，请重试', true); return; }
   if (status === 'accepted') {
     await sb.from('listings').update({ available: false, status: 'on_loan' }).eq('id', listingId);
     const item = allListings.find(l => l.id === listingId);
@@ -1314,11 +1302,11 @@ async function respondRequest(reqId, listingId, status, borrowerId) {
     renderBrowse(); updateStats();
     // send auto message to borrower
     const myName = currentProfile?.name || currentUser.email.split('@')[0];
-    await sb.from('messages').insert({ sender_id: currentUser.id, receiver_id: borrowerId, sender_name: myName, content: '✅ Your request has been accepted! Please arrange pickup with me.', request_id: reqId });
+    await sb.from('messages').insert({ sender_id: currentUser.id, receiver_id: borrowerId, sender_name: myName, content: '✅ 你的申请已通过！请联系我安排取乐器。', request_id: reqId });
   }
   await preloadChatData();
   renderIncoming(); renderOutgoing();
-  showToast('toast-home', status === 'accepted' ? 'Request accepted!' : 'Request declined');
+  showToast('toast-home', status === 'accepted' ? '已通过申请！' : '已拒绝申请');
 }
 
 /* ── thread ── */
@@ -1372,7 +1360,7 @@ async function openThread(receiverId, receiverName, subject, reqId) {
     wrap.innerHTML = local.map(renderBubble).join('');
     lastMessageTimestamp = local[local.length - 1].created_at;
   } else {
-    wrap.innerHTML = '<div class="empty-state">' + i('loader-2', 36, 'spin') + '</div>';
+    wrap.innerHTML = '<div class="empty-state"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div>';
   }
 
   document.getElementById('thread-title').textContent = `${receiverName}${subject ? ' · ' + subject : ''}`;
@@ -1458,7 +1446,7 @@ async function loadNewMessages() {
   if (lastMessageTimestamp) query = query.gt('created_at', lastMessageTimestamp);
   const { data } = await query;
   if (!data || !data.length) {
-    if (!lastMessageTimestamp) wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
+    if (!lastMessageTimestamp) wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">暂无消息，发个消息打个招呼吧！</div>';
     return;
   }
   lastMessageTimestamp = data[data.length - 1].created_at;
@@ -1559,17 +1547,17 @@ function showToast(id, msg, isError = false) {
 
 /* ── button loading state ── */
 const btnLabels = {
-  'login-btn': `Sign In ${i('arrow-right', 18)}`,
-  'reg-btn': `Create Account ${i('check', 18)}`,
-  'cp-btn': `Get Started ${i('arrow-right', 18)}`,
-  'post-btn': `Publish Listing ${i('arrow-right', 18)}`
+  'login-btn': 'Sign In <i class="ti ti-arrow-right"></i>',
+  'reg-btn': 'Create Account <i class="ti ti-check"></i>',
+  'cp-btn': 'Get Started <i class="ti ti-arrow-right"></i>',
+  'post-btn': 'Publish Listing <i class="ti ti-arrow-right"></i>'
 };
 function setLoading(btnId, loading) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
   btn.disabled = loading;
   btn.innerHTML = loading
-    ? i('loader-2', 18, 'spin')
+    ? '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i>'
     : (btnLabels[btnId] || btn.dataset.label || btn.textContent);
 }
 
@@ -1657,7 +1645,7 @@ function startRealtime() {
       if (r.borrower_id === currentUser.id && r.status === 'accepted') {
         const activeTab = document.querySelector('.tab.active')?.id;
         if (activeTab === 'tab-btn-myrent') renderMyRent();
-        else showToast('toast-home', `✅ Your request for "${r.instrument_name}" was accepted!`);
+        else showToast('toast-home', `✅ 你的「${r.instrument_name}」借阅申请已通过！`);
       }
       const activeTab = document.querySelector('.tab.active')?.id;
       if (activeTab === 'tab-btn-mylist') { renderIncoming(); renderOutgoing(); }
@@ -1675,7 +1663,7 @@ function startRealtime() {
       } else {
         unreadMessages++;
         showChatDot(true);
-        showToast('toast-home', `💬 New message from ${m.sender_name}`);
+        showToast('toast-home', `💬 来自 ${m.sender_name} 的新消息`);
         // refresh conversation list if chat tab is open
         const activeTab = document.querySelector('.tab.active')?.id;
         if (activeTab === 'tab-btn-chat') renderConversations();
@@ -1700,17 +1688,17 @@ init().then(() => { loadMemberCount(); startRealtime(); });
 <!-- ═══════ CHAT THREAD ═══════ -->
 <div id="screen-thread" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:200;display:none;flex-direction:column">
   <div class="back-header">
-    <button class="back-btn" onclick="closeThread()">${i('arrow-left', 20)}</button>
+    <button class="back-btn" onclick="closeThread()"><i class="ti ti-arrow-left"></i></button>
     <div class="back-title" id="thread-title">Chat</div>
   </div>
   <div id="thread-messages" style="flex:1;overflow-y:auto;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:10px;padding-bottom:80px;width:100%;box-sizing:border-box"></div>
   <div style="position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-top:0.5px solid var(--border);padding:10px 1.25rem;display:flex;gap:8px;align-items:center">
     <label style="cursor:pointer;color:var(--muted);font-size:22px;line-height:1;padding:4px" title="Send photo">
-      ${i('camera', 22)}
+      <i class="ti ti-camera"></i>
       <input type="file" accept="image/*" capture="environment" id="photo-input" style="display:none" onchange="sendPhoto(this)" />
     </label>
-    <input class="form-input" type="text" placeholder="Type a message…" id="msg-input" style="flex:1" />
-    <button class="search-btn" onclick="sendMessage()">${i('send', 18)}</button>
+    <input class="form-input" type="text" placeholder="发消息…" id="msg-input" style="flex:1" />
+    <button class="search-btn" onclick="sendMessage()"><i class="ti ti-send"></i></button>
   </div>
 </div>
 </body>
