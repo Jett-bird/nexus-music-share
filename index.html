@@ -326,7 +326,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.81</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.82</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -359,7 +359,7 @@ textarea.form-input{resize:vertical;min-height:80px}
       <div style="position:relative;display:inline-block">
         <i class="ti ti-message"></i>
         <span id="chat-dot" style="display:none;position:absolute;top:-2px;right:-4px;width:8px;height:8px;background:#e53e3e;border-radius:50%;border:1.5px solid var(--surface)"></span>
-      </div>消息
+      </div>Chat
     </div>
     <div class="tab" id="tab-btn-apply" onclick="switchTab('apply')">
       <i class="ti ti-file-description"></i>Requests
@@ -406,7 +406,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 
   <!-- chat tab -->
   <div id="tab-chat" style="display:none">
-    <div class="sec-header"><i class="ti ti-message"></i> 消息</div>
+    <div class="sec-header"><i class="ti ti-message"></i> Messages</div>
     <div class="my-listings" id="chat-conversations"></div>
   </div>
 
@@ -414,9 +414,9 @@ textarea.form-input{resize:vertical;min-height:80px}
 
   <!-- apply tab -->
   <div id="tab-apply" style="display:none">
-    <div class="sec-header"><i class="ti ti-inbox"></i> 收到的申请</div>
+    <div class="sec-header"><i class="ti ti-inbox"></i> Incoming Requests</div>
     <div class="my-listings" id="chat-incoming"></div>
-    <div class="sec-header" style="margin-top:4px"><i class="ti ti-send"></i> 我发出的申请</div>
+    <div class="sec-header" style="margin-top:4px"><i class="ti ti-send"></i> My Requests</div>
     <div class="my-listings" id="chat-outgoing"></div>
   </div>
 
@@ -1182,9 +1182,9 @@ async function confirmRent() {
     fee,
     status: 'pending'
   });
-  if (error) { showToast('toast-home', '申请发送失败，请重试', true); return; }
+  if (error) { showToast('toast-home', 'Could not send request. Please try again.', true); return; }
   closeOverlay('ov-rent');
-  showToast('toast-home', `申请已发送给 ${rentItem.owner_name}！在消息里查看进度。`);
+  showToast('toast-home', `Request sent to ${rentItem.owner_name}! Check Chat for updates.`);
   rentItem = null; selStart = null; selEnd = null;
 }
 
@@ -1209,7 +1209,7 @@ async function renderMyRent() {
 
 /* ── chat / requests ── */
 function reqCard(r, isIncoming, ownerName) {
-  const statusLabel = { pending: '待审核', accepted: '已通过', declined: '已拒绝', completed: '已完成' }[r.status] || r.status;
+  const statusLabel = r.status.charAt(0).toUpperCase() + r.status.slice(1);
   const msgKey = `req-${r.id}`;
   const otherId = isIncoming ? r.borrower_id : r.owner_id;
   const otherName = isIncoming ? r.borrower_name : (ownerName || 'Owner');
@@ -1219,15 +1219,15 @@ function reqCard(r, isIncoming, ownerName) {
       <div class="req-name">${r.instrument_name}</div>
       <div class="badge badge-${r.status}">${statusLabel}</div>
     </div>
-    <div class="req-meta">${isIncoming ? `来自: ${r.borrower_name} (${r.borrower_email})<br>` : ''}${r.start_date} → ${r.end_date} · ${r.fee}</div>
+    <div class="req-meta">${isIncoming ? `From: ${r.borrower_name} (${r.borrower_email})<br>` : ''}${r.start_date} → ${r.end_date} · ${r.fee}</div>
     ${isIncoming && r.status === 'pending' ? `
     <div class="req-actions">
-      <button class="req-accept" onclick="respondRequest('${r.id}','${r.listing_id}','accepted','${r.borrower_id}')">通过</button>
-      <button class="req-decline" onclick="respondRequest('${r.id}','${r.listing_id}','declined','${r.borrower_id}')">拒绝</button>
+      <button class="req-accept" onclick="respondRequest('${r.id}','${r.listing_id}','accepted','${r.borrower_id}')">Accept</button>
+      <button class="req-decline" onclick="respondRequest('${r.id}','${r.listing_id}','declined','${r.borrower_id}')">Decline</button>
     </div>` : ''}
     <div style="margin-top:8px">
       <button class="req-accept" style="width:auto;padding:7px 16px;font-size:12px" onclick="openThreadByKey('${msgKey}')">
-        <i class="ti ti-message"></i> 发消息
+        <i class="ti ti-message"></i> Message
       </button>
     </div>
   </div>`;
@@ -1250,7 +1250,7 @@ async function renderConversations() {
 
 function renderConversationsFromCache(wrap) {
   if (!cachedConversations) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div>'; return; }
-  if (!cachedConversations.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-message-off"></i>暂无对话</div>'; return; }
+  if (!cachedConversations.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-message-off"></i>No conversations yet</div>'; return; }
   wrap.innerHTML = cachedConversations.map(c => {
     const preview = c.lastMsg.startsWith('📷') ? '📷 Photo' : c.lastMsg.slice(0, 40) + (c.lastMsg.length > 40 ? '…' : '');
     const time = new Date(c.time).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
@@ -1284,7 +1284,7 @@ function renderOutgoing() {
   if (!wrap) return;
   const data = cachedRequests.outgoing;
   if (!data) { wrap.innerHTML = ''; return; }
-  if (!data.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-send"></i>暂无发出的申请</div>'; return; }
+  if (!data.length) { wrap.innerHTML = '<div class="empty-state"><i class="ti ti-send"></i>No outgoing requests</div>'; return; }
   const ownerNameMap = {};
   (cachedConversations || []).forEach(c => { ownerNameMap[c.otherId] = c.info.name; });
   wrap.innerHTML = data.map(r => reqCard(r, false, ownerNameMap[r.owner_id] || 'Owner')).join('');
@@ -1294,7 +1294,7 @@ async function renderChat() { await renderIncoming(); await renderOutgoing(); }
 
 async function respondRequest(reqId, listingId, status, borrowerId) {
   const { error } = await sb.from('requests').update({ status }).eq('id', reqId);
-  if (error) { showToast('toast-home', '操作失败，请重试', true); return; }
+  if (error) { showToast('toast-home', 'Could not update request', true); return; }
   if (status === 'accepted') {
     await sb.from('listings').update({ available: false, status: 'on_loan' }).eq('id', listingId);
     const item = allListings.find(l => l.id === listingId);
@@ -1302,11 +1302,11 @@ async function respondRequest(reqId, listingId, status, borrowerId) {
     renderBrowse(); updateStats();
     // send auto message to borrower
     const myName = currentProfile?.name || currentUser.email.split('@')[0];
-    await sb.from('messages').insert({ sender_id: currentUser.id, receiver_id: borrowerId, sender_name: myName, content: '✅ 你的申请已通过！请联系我安排取乐器。', request_id: reqId });
+    await sb.from('messages').insert({ sender_id: currentUser.id, receiver_id: borrowerId, sender_name: myName, content: '✅ Your request has been accepted! Please arrange pickup with me.', request_id: reqId });
   }
   await preloadChatData();
   renderIncoming(); renderOutgoing();
-  showToast('toast-home', status === 'accepted' ? '已通过申请！' : '已拒绝申请');
+  showToast('toast-home', status === 'accepted' ? 'Request accepted!' : 'Request declined');
 }
 
 /* ── thread ── */
@@ -1446,7 +1446,7 @@ async function loadNewMessages() {
   if (lastMessageTimestamp) query = query.gt('created_at', lastMessageTimestamp);
   const { data } = await query;
   if (!data || !data.length) {
-    if (!lastMessageTimestamp) wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">暂无消息，发个消息打个招呼吧！</div>';
+    if (!lastMessageTimestamp) wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
     return;
   }
   lastMessageTimestamp = data[data.length - 1].created_at;
@@ -1645,7 +1645,7 @@ function startRealtime() {
       if (r.borrower_id === currentUser.id && r.status === 'accepted') {
         const activeTab = document.querySelector('.tab.active')?.id;
         if (activeTab === 'tab-btn-myrent') renderMyRent();
-        else showToast('toast-home', `✅ 你的「${r.instrument_name}」借阅申请已通过！`);
+        else showToast('toast-home', `✅ Your request for "${r.instrument_name}" was accepted!`);
       }
       const activeTab = document.querySelector('.tab.active')?.id;
       if (activeTab === 'tab-btn-mylist') { renderIncoming(); renderOutgoing(); }
@@ -1663,7 +1663,7 @@ function startRealtime() {
       } else {
         unreadMessages++;
         showChatDot(true);
-        showToast('toast-home', `💬 来自 ${m.sender_name} 的新消息`);
+        showToast('toast-home', `💬 New message from ${m.sender_name}`);
         // refresh conversation list if chat tab is open
         const activeTab = document.querySelector('.tab.active')?.id;
         if (activeTab === 'tab-btn-chat') renderConversations();
@@ -1697,7 +1697,7 @@ init().then(() => { loadMemberCount(); startRealtime(); });
       <i class="ti ti-camera"></i>
       <input type="file" accept="image/*" capture="environment" id="photo-input" style="display:none" onchange="sendPhoto(this)" />
     </label>
-    <input class="form-input" type="text" placeholder="发消息…" id="msg-input" style="flex:1" />
+    <input class="form-input" type="text" placeholder="Type a message…" id="msg-input" style="flex:1" />
     <button class="search-btn" onclick="sendMessage()"><i class="ti ti-send"></i></button>
   </div>
 </div>
