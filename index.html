@@ -326,7 +326,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.83</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.85</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -597,6 +597,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     storage: window.localStorage
   }
 });
+// Wake up Supabase the instant the page opens — fires before anything else runs,
+// so the project is already warming up while the rest of the script/page loads.
+sb.from('profiles').select('id').limit(1);
 
 const EMOJIS = { Strings:'🎻', Keyboard:'🎹', Woodwind:'🪈', Brass:'🎺', Percussion:'🥁', Other:'🎵' };
 const BG = ['bg-t','bg-a','bg-c','bg-g'];
@@ -1426,7 +1429,7 @@ async function openThread(receiverId, receiverName, subject, reqId) {
   threadPollInterval = setInterval(() => {
     if (document.getElementById('screen-thread').style.display === 'flex') loadNewMessages();
     else { clearInterval(threadPollInterval); threadPollInterval = null; }
-  }, 5000);
+  }, 15000);
 }
 
 function closeThread() {
@@ -1472,6 +1475,7 @@ async function loadNewMessages() {
     .in('receiver_id', [currentUser.id, threadReceiverId])
     .order('created_at', { ascending: true });
   if (lastMessageTimestamp) query = query.gt('created_at', lastMessageTimestamp);
+  else query = query.limit(100); // cap full fetch to avoid slow queries
   const { data } = await query;
   if (!data || !data.length) {
     if (!lastMessageTimestamp) wrap.innerHTML = '<div style="text-align:center;color:var(--hint);font-size:13px;margin-top:2rem">No messages yet. Say hello!</div>';
