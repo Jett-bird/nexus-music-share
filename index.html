@@ -326,7 +326,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.85</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.86</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -977,21 +977,30 @@ async function autoExpireLoans() {
 
   const ids = onLoan.map(l => l.id);
   const { data: reqs } = await sb.from('requests')
-    .select('id, listing_id, end_date')
+    .select('id, listing_id, end_date, borrower_id, instrument_name')
     .in('listing_id', ids)
     .eq('status', 'accepted');
   const reqMap = {};
   (reqs || []).forEach(r => { reqMap[r.listing_id] = r; });
 
+  const myName = currentProfile?.name || currentUser.email.split('@')[0];
   for (const item of onLoan) {
     const req = reqMap[item.id];
     const endDate = req?.end_date;
     // expire: no accepted request OR end_date has passed
     if (!endDate || endDate <= today) {
-      // update listing: only set available=true (avoids needing status column)
       await sb.from('listings').update({ available: true, status: 'available' }).eq('id', item.id);
-      // also mark request as completed so it no longer blocks
-      if (req?.id) await sb.from('requests').update({ status: 'completed' }).eq('id', req.id);
+      if (req?.id) {
+        await sb.from('requests').update({ status: 'completed' }).eq('id', req.id);
+        // notify borrower to return the instrument
+        sb.from('messages').insert({
+          sender_id: currentUser.id,
+          receiver_id: req.borrower_id,
+          sender_name: myName,
+          content: `⏰ Your loan period for "${req.instrument_name || item.name}" has ended. Please return it to me at your earliest convenience. Thank you!`,
+          request_id: req.id
+        });
+      }
       item.available = true;
       item.status = 'available';
     }
@@ -1715,6 +1724,22 @@ window.addEventListener('popstate', () => {
 });
 
 /* ── start ── */
+// Early preload: read cached session from localStorage synchronously so we can
+// start fetching chat/listings BEFORE init()'s async getSession() completes.
+// This means a returning user gets data loading the instant the page opens,
+// even while still looking at the splash/login screen.
+(function() {
+  try {
+    const raw = localStorage.getItem('sb-kbhbpqtggujotmejmzkt-auth-token');
+    const s = raw ? JSON.parse(raw) : null;
+    if (s?.user?.id) {
+      currentUser = s.user;
+      loadChatFromLocal();
+      preloadChatData();
+      preloadListings();
+    }
+  } catch(e) {}
+})();
 init().then(() => { loadMemberCount(); startRealtime(); });
 </script>
 <!-- ═══════ CHAT THREAD ═══════ -->
