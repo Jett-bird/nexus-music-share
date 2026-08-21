@@ -14,11 +14,12 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --t50:#E1F5EE;--t100:#9FE1CB;--t200:#5DCAA5;--t400:#1D9E75;--t600:#0F6E56;--t800:#085041;
+  --t50:#DDF0FA;--t100:#96D4EE;--t200:#47B5DE;--t400:#1A8FBF;--t600:#106499;--t800:#09446E;
+  --n50:#E2F7F2;--n200:#4DC5A8;--n400:#2DA88C;
   --a50:#FAEEDA;--a200:#EF9F27;--a400:#BA7517;
   --c50:#FAECE7;--c400:#D85A30;--c600:#993C1D;
   --g50:#F1EFE8;--g100:#D3D1C7;--g600:#5F5E5A;--g800:#444441;
-  --bg:#f5f4f0;--surface:#fff;--border:#e0e0e0;
+  --bg:#f4f7f9;--surface:#fff;--border:#dde3e8;
   --text:#1a1a1a;--muted:#666;--hint:#aaa;
 }
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
@@ -69,7 +70,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 /* ── home hero ── */
 .home-hero{background:var(--t800);padding:1.5rem 1.25rem 1.25rem;position:relative;overflow:hidden}
 .home-hero::after{content:'♩ ♫ ♬';position:absolute;top:12px;right:16px;font-size:18px;color:rgba(255,255,255,0.12);letter-spacing:8px}
-.school-tag{display:inline-block;background:rgba(255,255,255,0.18);color:rgba(255,255,255,0.88);font-size:12px;font-weight:500;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:12px}
+.school-tag{display:inline-block;background:#3CB89A;color:#fff;font-size:12px;font-weight:500;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:12px}
 .hero-title{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:8px}
 .hero-sub{color:rgba(255,255,255,0.65);font-size:13px;line-height:1.5;max-width:320px}
 .hero-stats{display:flex;gap:24px;margin-top:16px}
@@ -326,7 +327,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.86</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.87</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -361,9 +362,6 @@ textarea.form-input{resize:vertical;min-height:80px}
         <span id="chat-dot" style="display:none;position:absolute;top:-2px;right:-4px;width:8px;height:8px;background:#e53e3e;border-radius:50%;border:1.5px solid var(--surface)"></span>
       </div>Chat
     </div>
-    <div class="tab" id="tab-btn-apply" onclick="switchTab('apply')">
-      <i class="ti ti-file-description"></i>Requests
-    </div>
     <div class="tab" id="tab-btn-account" onclick="switchTab('account')">
       <i class="ti ti-user-circle"></i>Account
     </div>
@@ -395,13 +393,17 @@ textarea.form-input{resize:vertical;min-height:80px}
 
   <!-- my listings tab -->
   <div id="tab-mylist" style="display:none">
-    <div class="sec-header"><i class="ti ti-music"></i> Instruments I'm Lending</div>
-    <div class="my-listings" id="my-listings-wrap"></div>
-    <div class="fab" style="padding-bottom:0">
-      <button class="fab-btn" onclick="openOverlay('ov-post')">
-        <i class="ti ti-plus"></i> Add Another Listing
+    <div style="padding:12px 1.25rem 0">
+      <button class="fab-btn" style="width:100%;border-radius:10px;position:relative;transform:none;box-shadow:none;margin:0" onclick="openOverlay('ov-post')">
+        <i class="ti ti-plus"></i> Add Listing
       </button>
     </div>
+    <div class="sec-header" style="margin-top:8px"><i class="ti ti-music"></i> Instruments I'm Lending</div>
+    <div class="my-listings" id="my-listings-wrap"></div>
+    <div class="sec-header" style="margin-top:4px"><i class="ti ti-inbox"></i> Incoming Requests</div>
+    <div class="my-listings" id="chat-incoming"></div>
+    <div class="sec-header" style="margin-top:4px"><i class="ti ti-send"></i> My Requests</div>
+    <div class="my-listings" id="chat-outgoing"></div>
   </div>
 
   <!-- chat tab -->
@@ -411,14 +413,6 @@ textarea.form-input{resize:vertical;min-height:80px}
   </div>
 
   <!-- chat thread screen -->
-
-  <!-- apply tab -->
-  <div id="tab-apply" style="display:none">
-    <div class="sec-header"><i class="ti ti-inbox"></i> Incoming Requests</div>
-    <div class="my-listings" id="chat-incoming"></div>
-    <div class="sec-header" style="margin-top:4px"><i class="ti ti-send"></i> My Requests</div>
-    <div class="my-listings" id="chat-outgoing"></div>
-  </div>
 
   <!-- account tab -->
   <div id="tab-account" style="display:none">
@@ -857,8 +851,8 @@ async function _doPreloadChatData() {
   (ownerProfilesRes.data || []).forEach(p => { ownerNameMap[p.id] = p.name; });
   const nameMap = {};
   reqs.forEach(r => {
-    if (r.borrower_id !== currentUser.id) nameMap[r.borrower_id] = { name: r.borrower_name, subject: r.instrument_name, reqId: r.id };
-    if (r.owner_id !== currentUser.id) nameMap[r.owner_id] = { name: ownerNameMap[r.owner_id] || 'Owner', subject: r.instrument_name, reqId: r.id };
+    if (r.borrower_id !== currentUser.id) nameMap[r.borrower_id] = { name: r.borrower_name, email: r.borrower_email || null, subject: r.instrument_name, reqId: r.id };
+    if (r.owner_id !== currentUser.id) nameMap[r.owner_id] = { name: ownerNameMap[r.owner_id] || 'Owner', email: null, subject: r.instrument_name, reqId: r.id };
   });
 
   // group messages by conversation partner (chronological)
@@ -877,9 +871,9 @@ async function _doPreloadChatData() {
     const otherId = m.sender_id === currentUser.id ? m.receiver_id : m.sender_id;
     if (!seenList.has(otherId)) {
       seenList.add(otherId);
-      const info = nameMap[otherId] || { name: m.sender_id !== currentUser.id ? m.sender_name : 'User', subject: '', reqId: m.request_id };
+      const info = nameMap[otherId] || { name: m.sender_id !== currentUser.id ? m.sender_name : 'User', email: null, subject: '', reqId: m.request_id };
       cachedConversations.push({ otherId, info, lastMsg: m.content, time: m.created_at });
-      threadMap[`conv-${otherId}`] = { receiverId: otherId, receiverName: info.name, subject: info.subject, reqId: info.reqId || null };
+      threadMap[`conv-${otherId}`] = { receiverId: otherId, receiverName: info.name, subject: '', reqId: null };
     }
   }
 
@@ -911,9 +905,8 @@ function switchTab(tab) {
     document.getElementById(`tab-btn-${t}`).classList.toggle('active', tab === t);
     document.getElementById(`tab-${t}`).style.display = tab === t ? 'block' : 'none';
   });
-  if (tab === 'mylist') renderMyListings();
-  if (tab === 'apply') { renderIncoming(); renderOutgoing(); }
-  if (tab === 'chat') { Promise.all([renderConversations(), renderOutgoing()]); unreadMessages = 0; showChatDot(false); }
+  if (tab === 'mylist') { renderMyListings(); renderIncoming(); renderOutgoing(); }
+  if (tab === 'chat') { Promise.all([renderConversations()]); unreadMessages = 0; showChatDot(false); }
   if (tab === 'account') renderAccount();
 }
 
@@ -966,8 +959,7 @@ function renderBrowse() {
 
 /* ── auto-expire loans ── */
 async function autoExpireLoans() {
-  const d = new Date();
-  const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const todayMs = new Date().setHours(0,0,0,0); // midnight today in ms
   const myListings = allListings.filter(l => l.user_id === currentUser.id);
   const onLoan = myListings.filter(l => {
     const s = l.status || (l.available ? 'available' : 'on_loan');
@@ -987,8 +979,10 @@ async function autoExpireLoans() {
   for (const item of onLoan) {
     const req = reqMap[item.id];
     const endDate = req?.end_date;
-    // expire: no accepted request OR end_date has passed
-    if (!endDate || endDate <= today) {
+    // Parse end_date safely regardless of format (2026/8/21 or 2026-08-21)
+    const endMs = endDate ? new Date(endDate.replace(/\//g, '-')).setHours(0,0,0,0) : null;
+    // expire: no accepted request OR end_date has passed (<=today)
+    if (!endMs || endMs <= todayMs) {
       await sb.from('listings').update({ available: true, status: 'available' }).eq('id', item.id);
       if (req?.id) {
         await sb.from('requests').update({ status: 'completed' }).eq('id', req.id);
@@ -1222,10 +1216,10 @@ async function renderMyRent() {
 /* ── chat / requests ── */
 function reqCard(r, isIncoming, ownerName) {
   const statusLabel = r.status.charAt(0).toUpperCase() + r.status.slice(1);
-  const msgKey = `req-${r.id}`;
   const otherId = isIncoming ? r.borrower_id : r.owner_id;
   const otherName = isIncoming ? r.borrower_name : (ownerName || 'Owner');
-  threadMap[msgKey] = { receiverId: otherId, receiverName: otherName, subject: r.instrument_name, reqId: r.id };
+  const msgKey = `conv-${otherId}`;
+  if (!threadMap[msgKey]) threadMap[msgKey] = { receiverId: otherId, receiverName: otherName, subject: '', reqId: null };
   return `<div class="req-card">
     <div class="req-top">
       <div class="req-name">${r.instrument_name}</div>
@@ -1274,8 +1268,8 @@ function renderConversationsFromCache(wrap) {
     return `<div class="listing-row" style="cursor:pointer" onclick="openThreadByKey('${key}')" onpointerenter="preloadThreadMessages('${c.otherId}')">
       ${avatarEl}
       <div class="listing-info">
-        <div class="listing-name">${c.info.name}${c.info.subject ? ' · ' + c.info.subject : ''}</div>
-        <div class="listing-meta">${preview}</div>
+        <div class="listing-name">${c.info.name}</div>
+        <div class="listing-meta">${c.info.email ? `<span style="color:var(--hint);font-size:11px">${c.info.email}</span> · ` : ''}${preview}</div>
       </div>
       <div style="font-size:10px;color:var(--hint)">${time}</div>
     </div>`;
@@ -1355,9 +1349,9 @@ function storeThread(key, receiverId, receiverName, subject, reqId) {
 function openThreadByKey(key) {
   const t = threadMap[key];
   if (!t) return;
-  // if called from Requests tab, switch to Chat first
+  // if called from My Listings tab, switch to Chat first
   const activeTab = document.querySelector('.tab.active')?.id;
-  if (activeTab === 'tab-btn-apply') {
+  if (activeTab !== 'tab-btn-chat') {
     switchTab('chat');
   }
   openThread(t.receiverId, t.receiverName, t.subject, t.reqId);
@@ -1394,7 +1388,7 @@ async function openThread(receiverId, receiverName, subject, reqId) {
     wrap.innerHTML = '<div class="empty-state"><i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i></div>';
   }
 
-  document.getElementById('thread-title').textContent = `${receiverName}${subject ? ' · ' + subject : ''}`;
+  document.getElementById('thread-title').textContent = receiverName;
   document.getElementById('screen-thread').style.display = 'flex';
   if (local && local.length) wrap.scrollTop = wrap.scrollHeight;
 
