@@ -14,12 +14,14 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --t50:#DDF0FA;--t100:#96D4EE;--t200:#47B5DE;--t400:#1A8FBF;--t600:#106499;--t800:#09446E;
-  --n50:#E2F7F2;--n200:#4DC5A8;--n400:#2DA88C;
+  /* Nexus sky blue */
+  --t50:#E5F6FC;--t100:#C5EBFA;--t200:#7FD2EE;--t400:#4BBDE0;--t600:#2EA5D0;--t800:#4BBDE0;
+  /* Nexus lime/yellow-green */
+  --n50:#F4F9D6;--n200:#C2D92A;--n400:#A3B820;
   --a50:#FAEEDA;--a200:#EF9F27;--a400:#BA7517;
   --c50:#FAECE7;--c400:#D85A30;--c600:#993C1D;
-  --g50:#F1EFE8;--g100:#D3D1C7;--g600:#5F5E5A;--g800:#444441;
-  --bg:#f4f7f9;--surface:#fff;--border:#dde3e8;
+  --g50:#F2F4F6;--g100:#D5D9DE;--g600:#5F6368;--g800:#42464A;
+  --bg:#f3f6f8;--surface:#fff;--border:#dde2e7;
   --text:#1a1a1a;--muted:#666;--hint:#aaa;
 }
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
@@ -28,7 +30,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* ── nav ── */
 .nav{background:var(--t800);padding:0 1.25rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:10}
 .nav-logo{font-family:'Playfair Display',serif;font-size:22px;color:#fff;font-weight:700}
-.nav-logo span{color:var(--t200)}
+.nav-logo span{color:#C2D92A}
 .nav-right{display:flex;align-items:center;gap:10px}
 .nav-user{display:flex;align-items:center;gap:8px;color:#fff;font-size:13px}
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--t400);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#fff;flex-shrink:0}
@@ -44,7 +46,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* ── auth ── */
 .auth-hero{background:var(--t800);padding:3rem 1.25rem 2rem;text-align:center}
 .auth-logo{font-family:'Playfair Display',serif;font-size:36px;font-weight:700;color:#fff}
-.auth-logo span{color:var(--t200)}
+.auth-logo span{color:#C2D92A}
 .auth-tagline{font-size:12px;color:rgba(255,255,255,0.55);margin-top:6px;letter-spacing:1.5px;text-transform:uppercase}
 .auth-wrap{padding:1.5rem 1.25rem 2rem}
 .auth-card{background:var(--surface);border:0.5px solid var(--border);border-radius:16px;padding:2rem}
@@ -70,7 +72,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 /* ── home hero ── */
 .home-hero{background:var(--t800);padding:1.5rem 1.25rem 1.25rem;position:relative;overflow:hidden}
 .home-hero::after{content:'♩ ♫ ♬';position:absolute;top:12px;right:16px;font-size:18px;color:rgba(255,255,255,0.12);letter-spacing:8px}
-.school-tag{display:inline-block;background:#3CB89A;color:#fff;font-size:12px;font-weight:500;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:12px}
+.school-tag{display:inline-block;background:#C2D92A;color:#3a4800;font-size:12px;font-weight:500;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:12px}
 .hero-title{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:8px}
 .hero-sub{color:rgba(255,255,255,0.65);font-size:13px;line-height:1.5;max-width:320px}
 .hero-stats{display:flex;gap:24px;margin-top:16px}
@@ -95,10 +97,10 @@ textarea.form-input{resize:vertical;min-height:80px}
 .pills::-webkit-scrollbar{display:none}
 .pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;white-space:nowrap;cursor:pointer;color:var(--muted);transition:all 0.15s;user-select:none}
 .pill:hover{border-color:var(--t400);color:var(--t600)}
-.pill.active{background:var(--t400);border-color:var(--t400);color:#fff}
+.pill.active{background:#C2D92A;border-color:#C2D92A;color:#3a4800}
 .cards-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 1rem 0}
 .icard{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:transform 0.12s,border-color 0.12s}
-.icard:hover{transform:translateY(-2px);border-color:var(--t200)}
+.icard:hover{transform:translateY(-2px);border-color:#C2D92A}
 .icard-img{height:60px;display:flex;align-items:center;justify-content:center;font-size:28px}
 .bg-t{background:var(--t50)}.bg-a{background:var(--a50)}.bg-c{background:var(--c50)}.bg-g{background:var(--g50)}
 .icard-body{padding:7px 8px 9px}
@@ -118,15 +120,15 @@ textarea.form-input{resize:vertical;min-height:80px}
 .empty-state{text-align:center;padding:3rem 1rem;color:var(--hint);font-size:13px}
 .empty-state i{font-size:36px;display:block;margin-bottom:10px;color:var(--g100)}
 .fab{padding:1rem 1.25rem 1.5rem}
-.fab-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--t600);color:#fff;border:none;border-radius:12px;padding:14px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:background 0.15s}
-.fab-btn:hover{background:var(--t800)}
+.fab-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#C2D92A;color:#3a4800;border:none;border-radius:12px;padding:14px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;transition:background 0.15s}
+.fab-btn:hover{background:#A8BC20}
 
 /* ── my listings ── */
 .my-listings{padding:0 1.25rem 1rem}
 .sec-header{padding:1rem 1.25rem 10px;font-size:14px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:6px}
 .sec-header i{color:var(--t400);font-size:16px}
 .listing-row{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:border-color 0.12s}
-.listing-row:hover{border-color:var(--t200)}
+.listing-row:hover{border-color:#C2D92A}
 .listing-icon{width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--t50);flex-shrink:0}
 .listing-info{flex:1;min-width:0}
 .listing-name{font-weight:500;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -138,7 +140,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 .req-name{font-weight:500;font-size:14px;color:var(--text)}
 .req-meta{font-size:12px;color:var(--muted);margin-bottom:10px}
 .req-actions{display:flex;gap:8px}
-.req-accept{flex:1;background:var(--t600);color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer}
+.req-accept{flex:1;background:#C2D92A;color:#3a4800;border:none;border-radius:8px;padding:9px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer}
 .req-decline{flex:1;background:transparent;color:var(--c400);border:1px solid var(--c400);border-radius:8px;padding:9px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer}
 .badge-pending{background:#FEF3C7;color:#92400E}
 .badge-accepted{background:var(--t50);color:var(--t800)}
@@ -327,7 +329,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.87</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.90</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -541,6 +543,14 @@ textarea.form-input{resize:vertical;min-height:80px}
       <button class="close-x" onclick="closeOverlay('ov-post')" aria-label="Close">&times;</button>
     </div>
     <div class="modal-sub">Fill in the details so classmates can find your instrument</div>
+    <div class="form-group">
+      <label class="form-label">Photo <span style="color:var(--hint);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <label id="img-upload-label" style="display:block;border:1.5px dashed var(--border);border-radius:10px;padding:18px;text-align:center;cursor:pointer;background:var(--bg);transition:border-color 0.15s">
+        <div id="img-preview" style="display:none;margin-bottom:8px"><img id="img-preview-img" style="max-height:140px;border-radius:8px;object-fit:cover;width:100%" /></div>
+        <div id="img-upload-hint"><i class="ti ti-photo" style="font-size:26px;color:var(--hint)"></i><div style="font-size:13px;color:var(--muted);margin-top:4px">Tap to add a photo</div></div>
+        <input type="file" id="p-img" accept="image/*" style="display:none" onchange="previewPostImage(this)" />
+      </label>
+    </div>
     <div class="form-group">
       <label class="form-label">Instrument Name</label>
       <input class="form-input" type="text" placeholder="e.g. Digital Piano YDP-145" id="p-name" />
@@ -945,7 +955,10 @@ function renderBrowse() {
   }
   grid.innerHTML = data.map((item, idx) => `
     <div class="icard" onclick="openRentModal('${item.id}')">
-      <div class="icard-img ${BG[idx % 4]}">${EMOJIS[item.cat] || '🎵'}</div>
+      ${item.image_url
+        ? `<img src="${item.image_url}" style="width:100%;height:60px;object-fit:cover;display:block" />`
+        : `<div class="icard-img ${BG[idx % 4]}">${EMOJIS[item.cat] || '🎵'}</div>`
+      }
       <div class="icard-body">
         <div class="icard-name">${item.name}</div>
         <div class="icard-owner"><i class="ti ti-user" style="font-size:11px"></i> ${item.owner_name}</div>
@@ -1528,6 +1541,18 @@ async function sendMessage() {
   // realtime will append the real message; no need to reload
 }
 
+function previewPostImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('img-preview-img').src = e.target.result;
+    document.getElementById('img-preview').style.display = 'block';
+    document.getElementById('img-upload-hint').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
 /* ── post listing ── */
 async function submitPost() {
   const name    = document.getElementById('p-name').value.trim();
@@ -1539,13 +1564,28 @@ async function submitPost() {
   const desc      = document.getElementById('p-desc').value.trim();
   if (!name || !price) { showToast('toast-home', 'Please fill in the instrument name and fee', true); return; }
   setLoading('post-btn', true);
+
+  // Upload image if selected
+  let imageUrl = null;
+  const imgFile = document.getElementById('p-img').files[0];
+  if (imgFile) {
+    const ext = imgFile.name.split('.').pop().toLowerCase();
+    const path = `${currentUser.id}/${Date.now()}.${ext}`;
+    const { error: uploadErr } = await sb.storage.from('instrument-images').upload(path, imgFile, { upsert: true });
+    if (!uploadErr) {
+      const { data: urlData } = sb.storage.from('instrument-images').getPublicUrl(path);
+      imageUrl = urlData.publicUrl;
+    }
+  }
+
   const ownerName = currentProfile?.name || currentUser.email.split('@')[0];
   const { data, error } = await sb.from('listings').insert({
     user_id: currentUser.id,
     owner_name: ownerName,
     name, cat, price, contact,
     brand, condition, description: desc,
-    available: true
+    available: true,
+    image_url: imageUrl
   }).select().single();
   setLoading('post-btn', false);
   if (error) { showToast('toast-home', 'Could not publish listing. Please try again.', true); return; }
@@ -1557,6 +1597,9 @@ async function submitPost() {
   document.getElementById('p-brand').value     = '';
   document.getElementById('p-condition').value = '';
   document.getElementById('p-desc').value      = '';
+  document.getElementById('p-img').value = '';
+  document.getElementById('img-preview').style.display = 'none';
+  document.getElementById('img-upload-hint').style.display = 'block';
   renderBrowse();
   renderMyListings();
   updateStats();
