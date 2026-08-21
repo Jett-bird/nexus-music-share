@@ -329,7 +329,7 @@ textarea.form-input{resize:vertical;min-height:80px}
 <!-- ═══════ HOME ═══════ -->
 <div id="screen-home" class="screen">
   <div class="nav">
-    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.90</span></div>
+    <div class="nav-logo">Nexus Music <span>Share</span> <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.45);letter-spacing:0.5px">v1.91</span></div>
     <div class="nav-right">
       <div class="nav-user">
         <div class="avatar" id="home-avatar" style="overflow:hidden">A</div>
@@ -365,7 +365,7 @@ textarea.form-input{resize:vertical;min-height:80px}
       </div>Chat
     </div>
     <div class="tab" id="tab-btn-account" onclick="switchTab('account')">
-      <i class="ti ti-user-circle"></i>Account
+      <i class="ti ti-user-circle"></i>My Account
     </div>
   </div>
 
@@ -911,9 +911,10 @@ async function loadMemberCount() {
 
 /* ── tabs ── */
 function switchTab(tab) {
-  ['browse','mylist','chat','apply','account'].forEach(t => {
-    document.getElementById(`tab-btn-${t}`).classList.toggle('active', tab === t);
-    document.getElementById(`tab-${t}`).style.display = tab === t ? 'block' : 'none';
+  ['browse','mylist','chat','account'].forEach(t => {
+    document.getElementById(`tab-btn-${t}`)?.classList.toggle('active', tab === t);
+    const el = document.getElementById(`tab-${t}`);
+    if (el) el.style.display = tab === t ? 'block' : 'none';
   });
   if (tab === 'mylist') { renderMyListings(); renderIncoming(); renderOutgoing(); }
   if (tab === 'chat') { Promise.all([renderConversations()]); unreadMessages = 0; showChatDot(false); }
