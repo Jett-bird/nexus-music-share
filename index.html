@@ -598,7 +598,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage: window.localStorage
+    storage: window.sessionStorage
   }
 });
 // Wake up Supabase the instant the page opens — fires before anything else runs,
@@ -1780,7 +1780,7 @@ window.addEventListener('popstate', () => {
 // even while still looking at the splash/login screen.
 (function() {
   try {
-    const raw = localStorage.getItem('sb-kbhbpqtggujotmejmzkt-auth-token');
+    const raw = sessionStorage.getItem('sb-kbhbpqtggujotmejmzkt-auth-token');
     const s = raw ? JSON.parse(raw) : null;
     if (s?.user?.id) {
       currentUser = s.user;
