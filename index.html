@@ -387,7 +387,7 @@ textarea.form-input{resize:vertical;min-height:80px}
     </div>
     <div class="cards-grid" id="browse-grid"></div>
     <div class="fab">
-      <button class="fab-btn" onclick="openOverlay('ov-post')">
+      <button class="fab-btn" onclick="openPostOverlay()">
         <i class="ti ti-plus"></i> List My Instrument
       </button>
     </div>
@@ -396,7 +396,7 @@ textarea.form-input{resize:vertical;min-height:80px}
   <!-- my listings tab -->
   <div id="tab-mylist" style="display:none">
     <div style="padding:12px 1.25rem 0">
-      <button class="fab-btn" style="width:100%;border-radius:10px;position:relative;transform:none;box-shadow:none;margin:0" onclick="openOverlay('ov-post')">
+      <button class="fab-btn" style="width:100%;border-radius:10px;position:relative;transform:none;box-shadow:none;margin:0" onclick="openPostOverlay()">
         <i class="ti ti-plus"></i> Add Listing
       </button>
     </div>
@@ -540,7 +540,7 @@ textarea.form-input{resize:vertical;min-height:80px}
   <div class="modal">
     <div class="modal-hdr">
       <div class="modal-title">List an Instrument</div>
-      <button class="close-x" onclick="closeOverlay('ov-post')" aria-label="Close">&times;</button>
+      <button class="close-x" onclick="closePostOverlay()" aria-label="Close">&times;</button>
     </div>
     <div class="modal-sub">Fill in the details so classmates can find your instrument</div>
     <div class="form-group">
@@ -810,9 +810,16 @@ function loadChatFromLocal() {
 }
 
 let _chatPreloadPromise = null;
+let _chatFetchedAt = 0;
 function preloadChatData() {
+  // Skip refetch if data is fresh (< 30 seconds) to avoid re-loading on every tab switch
+  if (!_chatPreloadPromise && cachedConversations && Date.now() - _chatFetchedAt < 30000) {
+    return Promise.resolve();
+  }
   if (!_chatPreloadPromise) {
-    _chatPreloadPromise = _doPreloadChatData().finally(() => { _chatPreloadPromise = null; });
+    _chatPreloadPromise = _doPreloadChatData()
+      .then(() => { _chatFetchedAt = Date.now(); })
+      .finally(() => { _chatPreloadPromise = null; });
   }
   return _chatPreloadPromise;
 }
@@ -1591,16 +1598,7 @@ async function submitPost() {
   setLoading('post-btn', false);
   if (error) { showToast('toast-home', 'Could not publish listing. Please try again.', true); return; }
   allListings.unshift(data);
-  closeOverlay('ov-post');
-  document.getElementById('p-name').value    = '';
-  document.getElementById('p-price').value   = '';
-  document.getElementById('p-contact').value = '';
-  document.getElementById('p-brand').value     = '';
-  document.getElementById('p-condition').value = '';
-  document.getElementById('p-desc').value      = '';
-  document.getElementById('p-img').value = '';
-  document.getElementById('img-preview').style.display = 'none';
-  document.getElementById('img-upload-hint').style.display = 'block';
+  closePostOverlay();
   renderBrowse();
   renderMyListings();
   updateStats();
@@ -1610,8 +1608,22 @@ async function submitPost() {
 /* ── overlays ── */
 function openOverlay(id)  { document.getElementById(id).classList.add('open'); }
 function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+
+function _clearPostForm() {
+  ['p-name','p-price','p-brand','p-desc'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const cat = document.getElementById('p-cat'); if (cat) cat.selectedIndex = 0;
+  const cond = document.getElementById('p-condition'); if (cond) cond.selectedIndex = 0;
+  const img = document.getElementById('p-img'); if (img) img.value = '';
+  const prev = document.getElementById('img-preview'); if (prev) prev.style.display = 'none';
+  const hint = document.getElementById('img-upload-hint'); if (hint) hint.style.display = 'block';
+}
+function openPostOverlay()  { _clearPostForm(); openOverlay('ov-post'); }
+function closePostOverlay() { closeOverlay('ov-post'); _clearPostForm(); }
 document.querySelectorAll('.overlay').forEach(ov => {
-  ov.addEventListener('click', e => { if (e.target === ov) closeOverlay(ov.id); });
+  ov.addEventListener('click', e => {
+    if (e.target !== ov) return;
+    if (ov.id === 'ov-post') closePostOverlay(); else closeOverlay(ov.id);
+  });
 });
 
 /* ── toast ── */
