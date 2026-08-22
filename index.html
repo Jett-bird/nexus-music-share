@@ -98,17 +98,17 @@ textarea.form-input{resize:vertical;min-height:80px}
 .pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:500;white-space:nowrap;cursor:pointer;color:var(--muted);transition:all 0.15s;user-select:none}
 .pill:hover{border-color:var(--t400);color:var(--t600)}
 .pill.active{background:#C2D92A;border-color:#C2D92A;color:#3a4800}
-.cards-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 1rem 0}
-.icard{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:transform 0.12s,border-color 0.12s}
+.cards-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px 1rem 0}
+.icard{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform 0.12s,border-color 0.12s}
 .icard:hover{transform:translateY(-2px);border-color:#C2D92A}
-.icard-img{height:60px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.icard-img{height:130px;display:flex;align-items:center;justify-content:center;font-size:48px}
 .bg-t{background:var(--t50)}.bg-a{background:var(--a50)}.bg-c{background:var(--c50)}.bg-g{background:var(--g50)}
-.icard-body{padding:7px 8px 9px}
-.icard-name{font-weight:500;font-size:11px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.icard-owner{font-size:10px;color:var(--muted);margin-bottom:5px;display:flex;align-items:center;gap:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icard-body{padding:9px 10px 11px}
+.icard-name{font-weight:600;font-size:13px;color:var(--text);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icard-owner{font-size:11px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .icard-foot{display:flex;justify-content:space-between;align-items:center}
-.price{font-family:'Playfair Display',serif;font-weight:700;font-size:12px;color:var(--t600)}
-.price span{font-size:10px;font-weight:400;font-family:'DM Sans',sans-serif;color:var(--hint)}
+.price{font-family:'Playfair Display',serif;font-weight:700;font-size:14px;color:var(--t600)}
+.price span{font-size:11px;font-weight:400;font-family:'DM Sans',sans-serif;color:var(--hint)}
 .badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:500}
 .badge-ok{background:var(--t50);color:var(--t800)}
 .badge-out{background:var(--a50);color:var(--a400)}
@@ -451,7 +451,7 @@ textarea.form-input{resize:vertical;min-height:80px}
       </div>
     </div>
     <div style="padding:1rem 1.25rem 0">
-      <button class="fab-btn" style="background:var(--c600)" onclick="doLogout()">
+      <button class="fab-btn" style="background:var(--c600);color:#fff" onclick="doLogout()">
         <i class="ti ti-logout"></i> Sign Out
       </button>
     </div>
@@ -742,7 +742,7 @@ async function doRegister() {
 async function doLogout() {
   // don't clear localStorage — keys are user-ID specific so other users can't see them,
   // and keeping cache means instant load on next login
-  await sb.auth.signOut();
+  try { await sb.auth.signOut(); } catch(e) {}
   currentUser = null; currentProfile = null;
   allListings = []; cachedConversations = null; cachedRequests = { incoming: null, outgoing: null };
   document.getElementById('login-email').value = '';
@@ -957,7 +957,7 @@ function renderBrowse() {
   grid.innerHTML = data.map((item, idx) => `
     <div class="icard" onclick="openRentModal('${item.id}')">
       ${item.image_url
-        ? `<img src="${item.image_url}" style="width:100%;height:60px;object-fit:cover;display:block" />`
+        ? `<img src="${item.image_url}" style="width:100%;height:130px;object-fit:cover;display:block" />`
         : `<div class="icard-img ${BG[idx % 4]}">${EMOJIS[item.cat] || '🎵'}</div>`
       }
       <div class="icard-body">
